@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado de Pago - Celticket</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+            --bad: #ef4444;
+            --info: #60a5fa;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.15) 1px, transparent 0), var(--bg);
+            background-size: 22px 22px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 720px;
+            background: var(--panel);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            color: #f8fafc;
+        }
+
+        .muted {
+            margin: 0 0 16px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        input, button {
+            border-radius: 8px;
+            border: 1px solid #334155;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        input {
+            flex: 1;
+            background: #020617;
+            color: var(--text);
+        }
+
+        button {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status.info { background: rgba(96, 165, 250, 0.12); border-color: rgba(96, 165, 250, 0.45); color: var(--info); }
+        .status.pending { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.45); color: var(--warn); }
+        .status.approved { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.45); color: var(--ok); }
+        .status.declined { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.45); color: var(--bad); }
+
+        .details {
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .confirmed {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.45);
+            color: #86efac;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>Resultado del pago</h1>
+        <p class="muted">Consulta el estado final por referencia de Wompi.</p>
+
+        <div class="row">
+            <input id="referenceInput" placeholder="Ej: CELT-72-3E3F7783A4" />
+            <button id="btnCheck">Consultar</button>
+        </div>
+
+        <div id="statusBox" class="status info">Esperando referencia...</div>
+        <div id="detailsBox" class="details">Sin datos todavía.</div>
+        <div id="confirmedBox" class="confirmed"></div>
+
+        <div class="actions">
+            <button id="btnPoll">Activar auto-consulta</button>
+            <button id="btnStopPoll">Detener auto-consulta</button>
+            <button id="btnBack">Volver al mock</button>
+            <button id="btnGoPurchased" style="display:none; background:#16a34a;">Ir a mis sillas compradas</button>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = "https://celticket-api.onrender.com";
+        let pollTimer = null;
+        let currentEventId = null;
+        let currentSeatIds = [];
+        const TERMINAL_STATES = new Set(["APPROVED", "DECLINED", "VOIDED", "ERROR"]);
+
+        function getRefFromUrl() {
+            const p = new URLSearchParams(window.location.search);
+            return p.get("reference") || p.get("ref") || "";
+        }
+
+        function getEventIdFromUrl() {
+            const p = new URLSearchParams(window.location.search);
+            const raw = p.get("eventId");
+            if (!raw) return null;
+            const parsed = parseInt(raw, 10);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function statusClass(status) {
+            if (!status) return "info";
+            const s = status.toUpperCase();
+            if (s === "APPROVED") return "approved";
+            if (s === "PENDING") return "pending";
+            if (s === "DECLINED" || s === "VOIDED" || s === "ERROR") return "declined";
+            return "info";
+        }
+
+        function setStatus(message, status) {
+            const box = document.getElementById("statusBox");
+            box.className = "status " + statusClass(status);
+            const s = (status || "").toUpperCase();
+            const icon = s === "APPROVED" ? "✅" : s === "PENDING" ? "⏳" : (s === "DECLINED" || s === "VOIDED" || s === "ERROR") ? "❌" : "ℹ️";
+            box.innerText = `${icon} ${message}`;
+        }
+
+        function formatCop(cents) {
+            return "$" + Math.round((cents || 0) / 100).toLocaleString("es-CO");
+        }
+
+        async function fetchOrder(reference) {
+            const res = await fetch(`${API_BASE}/api/payments/wompi/orders/${encodeURIComponent(reference)}`);
+            if (res.status === 404) {
+                throw new Error("No se encontró una orden con esa referencia.");
+            }
+            if (!res.ok) {
+                throw new Error(`Error consultando orden (${res.status}).`);
+            }
+            return res.json();
+        }
+
+        async function checkStatus() {
+            const reference = document.getElementById("referenceInput").value.trim();
+            if (!reference) {
+                setStatus("Ingresa una referencia para consultar.", "info");
+                return;
+            }
+            setStatus("Consultando estado...", "PENDING");
+            try {
+                const order = await fetchOrder(reference);
+                currentEventId = order.eventId || currentEventId;
+                currentSeatIds = Array.isArray(order.seatIds) ? order.seatIds : [];
+                setStatus(`Estado actual: ${order.status}`, order.status);
+                document.getElementById("detailsBox").innerText =
+                    `Referencia: ${order.reference}\n` +
+                    `Evento: ${order.eventId}\n` +
+                    `Estado: ${order.status}\n` +
+                    `Sillas: ${order.seatCount || (order.seatIds ? order.seatIds.length : 0)}\n` +
+                    `Subtotal: ${formatCop(order.subtotalCents || 0)}\n` +
+                    `Fee: ${formatCop(order.serviceFeeCents || 0)}\n` +
+                    `Total: ${formatCop(order.amountInCents || 0)}\n` +
+                    `Moneda: ${order.currency || "COP"}`;
+
+                const confirmedBox = document.getElementById("confirmedBox");
+                const goPurchasedBtn = document.getElementById("btnGoPurchased");
+                if ((order.status || "").toUpperCase() === "APPROVED") {
+                    const seats = currentSeatIds;
+                    confirmedBox.style.display = "block";
+                    confirmedBox.innerText = `Compra confirmada 🎉\nAsientos: ${seats.length > 0 ? seats.join(", ") : "N/D"}`;
+                    goPurchasedBtn.style.display = (currentEventId && seats.length > 0) ? "inline-block" : "none";
+                } else {
+                    confirmedBox.style.display = "none";
+                    confirmedBox.innerText = "";
+                    goPurchasedBtn.style.display = "none";
+                }
+
+                if (TERMINAL_STATES.has((order.status || "").toUpperCase()) && pollTimer) {
+                    stopPolling();
+                }
+            } catch (err) {
+                setStatus(`Error: ${err.message}`, "DECLINED");
+                document.getElementById("detailsBox").innerText = "No se pudo consultar la orden.";
+            }
+        }
+
+        function startPolling() {
+            stopPolling();
+            pollTimer = setInterval(checkStatus, 3000);
+            setStatus("Auto-consulta activada (cada 3s).", "PENDING");
+        }
+
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            setStatus("Auto-consulta detenida.", "info");
+        }
+
+        document.getElementById("btnCheck").addEventListener("click", checkStatus);
+        document.getElementById("btnPoll").addEventListener("click", startPolling);
+        document.getElementById("btnStopPoll").addEventListener("click", stopPolling);
+        document.getElementById("btnBack").addEventListener("click", () => {
+            if (currentEventId) {
+                window.location.href = `frontend_seat_mock.html?eventId=${encodeURIComponent(currentEventId)}`;
+            } else {
+                window.location.href = "frontend_seat_mock.html";
+            }
+        });
+        document.getElementById("btnGoPurchased").addEventListener("click", () => {
+            if (!currentEventId || !currentSeatIds.length) return;
+            const seatsParam = encodeURIComponent(currentSeatIds.join(","));
+            window.location.href = `frontend_seat_mock.html?eventId=${encodeURIComponent(currentEventId)}&focusPurchasedSeats=${seatsParam}`;
+        });
+
+        const initialRef = getRefFromUrl();
+        const initialEventId = getEventIdFromUrl();
+        if (initialEventId) currentEventId = initialEventId;
+        if (initialRef) {
+            document.getElementById("referenceInput").value = initialRef;
+            checkStatus();
+            startPolling();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/frontend_seat_mock.html" },
+    { "source": "/payment-result", "destination": "/payment-result.html" },
+    { "source": "/layout-builder", "destination": "/layout_builder.html" },
+    { "source": "/frontend", "destination": "/frontend/index.html" }
+  ]
+}

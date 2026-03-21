@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "BackendApplication (Debug)",
+            "request": "launch",
+            "mainClass": "com.celticket.backend.BackendApplication",
+            "projectName": "backend",
+            "cwd": "${workspaceFolder}/backend",
+            "preLaunchTask": "Infra: levantar MySQL y Redis"
+        }
+    ]
+}

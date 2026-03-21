@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock: Selección de Sillas en Tiempo Real</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-bg: #16213e;
+            --text-color: #e94560;
+            --accent-color: #4ade80;
+            --text-light: #ffffff;
+            --seat-available: #4caf50;
+            --seat-locked-me: #0f3460;
+            --seat-locked-other: #f4d03f;
+            --seat-sold: #7f8c8d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            flex: 2;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logs-panel {
+            flex: 1;
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: hidden;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-entries {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 4px; }
+        .log-send { color: #4ade80; }
+        .log-recv { color: #60a5fa; }
+        .log-sys { color: #f472b6; }
+
+        h1 { color: var(--text-color); margin-top: 0; margin-bottom: 5px; }
+        
+        .user-id-display {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #aaa;
+            background: #0f172a;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+
+        .stage {
+            width: 80%;
+            height: 40px;
+            background: linear-gradient(to bottom, #444, #222);
+            border-radius: 20px 20px 0 0;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            letter-spacing: 5px;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.1);
+        }
+
+        .seat-map {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            margin: 0 auto;
+            overflow-y: auto;
+        }
+
+        .seat-map.pro-layout {
+            position: relative;
+            display: block;
+            min-height: 420px;
+            border: 1px dashed rgba(148, 163, 184, 0.35);
+            border-radius: 10px;
+            padding: 0;
+            background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.15) 1px, transparent 0);
+            background-size: 22px 22px;
+        }
+
+        .section-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-name {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stage-platform {
+            position: absolute;
+            border-radius: 10px;
+            border: 1px solid #f59e0b;
+            background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+            color: #111827;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.25);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .pro-section-box {
+            position: absolute;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+            z-index: 2;
+        }
+
+        .pro-section-title {
+            background: rgba(71, 85, 105, 0.4);
+            padding: 0 8px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            border-bottom: 1px solid #334155;
+            font-size: 12px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: 0.5px;
+        }
+
+        .pro-section-grid {
+            padding: 8px;
+            display: grid;
+            gap: 4px;
+        }
+
+        .origin-cross {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .origin-cross::before,
+        .origin-cross::after {
+            content: '';
+            position: absolute;
+            background: #ef4444;
+        }
+
+        .origin-cross::before {
+            left: 6px;
+            top: 0;
+            width: 2px;
+            height: 14px;
+        }
+
+        .origin-cross::after {
+            left: 0;
+            top: 6px;
+            width: 14px;
+            height: 2px;
+        }
+
+        .section-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .seat {
+            width: 40px;
+            height: 40px;
+            background-color: var(--seat-available);
+            border-radius: 8px 8px 4px 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .seat:hover:not(.sold):not(.locked-other) {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        .seat.locked-me { background-color: var(--seat-locked-me); border: 2px solid var(--text-color); }
+        .seat.locked-other { background-color: var(--seat-locked-other); cursor: not-allowed; color: #333; }
+        .seat.sold { background-color: var(--seat-sold); cursor: not-allowed; opacity: 0.6; }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .legend-color { width: 20px; height: 20px; border-radius: 4px; }
+
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        button {
+            background: var(--text-color); color: white; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s;
+        }
+        button:hover:not(:disabled) { background: #d03a55; }
+        button:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+        
+        .btn-checkout {
+            background: #4caf50;
+        }
+        .btn-checkout:hover:not(:disabled) {
+            background: #45a049;
+        }
+
+        .checkout-summary {
+            margin-top: 12px;
+            width: 100%;
+            max-width: 680px;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        .seat.purchased-focus {
+            outline: 2px solid #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+            animation: purchasedPulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes purchasedPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+
+    </style>
+    <!-- SockJS and Stomp from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://checkout.wompi.co/widget.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Concierto: Mock WS</h1>
+        <div class="user-id-display" id="userIdDisplay"></div>
+        <div class="stage">ESCENARIO</div>
+        
+        <div class="seat-map" id="seatMap">
+            <!-- Asientos generados por JS -->
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: var(--seat-available)"></div> Disponible</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--seat-locked-me); border: 1px solid var(--text-color)"></div> Tu Selección</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--seat-locked-other)"></div> En Otro Carrito</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--seat-sold)"></div> Vendido</div>
+        </div>
+
+        <div class="controls">
+            <button id="btnConnect">Instalar / Conectar</button>
+            <button id="btnSimulateOther" disabled>Simular Otro Usuario (Bot WS)</button>
+            <button id="btnCheckout" class="btn-checkout" disabled>Ir a Pagar</button>
+        </div>
+        <div class="event-discovery" id="eventDiscovery" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid #333;">
+            <h4 style="margin: 0 0 10px 0; color: var(--accent-color);">Eventos Disponibles (Discovery API)</h4>
+            <div id="eventList" style="font-size: 0.9em; color: #aaa;">Cargando eventos...</div>
+        </div>
+
+    </div>
+
+    <div class="logs-panel">
+        <h3 style="margin-top:0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px;">WebSocket Traffic Logs</h3>
+        <div id="logsPanel" class="log-entries"></div>
+    </div>
+
+    <div id="floatingCart" class="checkout-summary" style="position: fixed; right: 24px; bottom: 20px; width: 360px; max-width: 40vw; z-index: 20; box-shadow: 0 10px 22px rgba(0,0,0,0.35);">
+        <div style="font-weight:700; margin-bottom:8px; color:#fff;">Carrito de compras</div>
+        <div id="checkoutSummary">Carrito: 0 sillas | Subtotal: $0</div>
+        <div id="checkoutSeatList" style="margin-top:8px; font-size:12px; color:#94a3b8;"></div>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+            <input id="buyerEmailInput" type="email" placeholder="email@cliente.com" value="test@example.com" style="flex:1; border-radius:6px; border:1px solid #334155; background:#020617; color:#e2e8f0; padding:8px;">
+        </div>
+        <div id="checkoutTotals" style="margin-top:8px; font-size:12px; color:#a5b4fc;"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const CURRENT_EVENT_ID = urlParams.get('eventId') || 1;
+        const EVENT_ID = parseInt(CURRENT_EVENT_ID);
+        
+        // --- SESIÓN DEL USUARIO ---
+        let MY_USER_ID = localStorage.getItem("celticket_session_id");
+        if (!MY_USER_ID) {
+            // Generar un Session ID pseudo-aleatorio para el carrito
+            MY_USER_ID = "sess_" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            localStorage.setItem("celticket_session_id", MY_USER_ID);
+        }
+        
+        let ws = null;
+        let botWs = null;
+        let isSimulating = false;
+        let botInterval = null;
+        const FOCUS_PURCHASED_SEATS_PARAM = urlParams.get('focusPurchasedSeats') || '';
+        const FOCUS_PURCHASED_SEATS = FOCUS_PURCHASED_SEATS_PARAM
+            ? FOCUS_PURCHASED_SEATS_PARAM.split(',').map(s => decodeURIComponent(s).trim()).filter(Boolean)
+            : [];
+
+        let ALL_EVENTS = [];
+        let SECTION_PRICE_MAP = {};
+        let DEFAULT_SEAT_PRICE_CENTS = 20000;
+
+        function formatCop(cents) {
+            return '$' + Math.round((cents || 0) / 100).toLocaleString('es-CO');
+        }
+
+        function extractSectionFromSeatId(seatId) {
+            if (!seatId) return '';
+            const idx = seatId.lastIndexOf('-');
+            return idx > 0 ? seatId.substring(0, idx) : '';
+        }
+
+        function getSeatPriceCents(seatId) {
+            const section = extractSectionFromSeatId(seatId);
+            if (section && Number.isFinite(SECTION_PRICE_MAP[section])) {
+                return SECTION_PRICE_MAP[section];
+            }
+            return DEFAULT_SEAT_PRICE_CENTS;
+        }
+
+        function refreshCheckoutSummary() {
+            const mySeats = Array.from(document.querySelectorAll('.seat.locked-me')).map(el => el.dataset.id);
+            const subtotalCents = mySeats.reduce((acc, seatId) => acc + getSeatPriceCents(seatId), 0);
+            const summaryEl = document.getElementById('checkoutSummary');
+            summaryEl.innerText = `Carrito: ${mySeats.length} sillas | Subtotal: ${formatCop(subtotalCents)}`;
+            const listEl = document.getElementById('checkoutSeatList');
+            listEl.innerText = mySeats.length > 0 ? `Asientos: ${mySeats.join(', ')}` : 'Sin asientos seleccionados.';
+        }
+
+        function normalizeErrorMessage(error) {
+            if (!error) return 'Error desconocido';
+            if (typeof error === 'string') return error;
+            if (typeof error.message === 'string' && error.message.trim()) return error.message;
+            try {
+                return JSON.stringify(error);
+            } catch (_) {
+                return String(error);
+            }
+        }
+
+        function focusPurchasedSeatsInMap(retries = 0) {
+            if (!FOCUS_PURCHASED_SEATS.length) return;
+            const map = document.getElementById('seatMap');
+            let firstSeatEl = null;
+
+            FOCUS_PURCHASED_SEATS.forEach((seatId) => {
+                const el = document.getElementById(`seat-${seatId}`);
+                if (el) {
+                    el.classList.add('purchased-focus');
+                    if (!firstSeatEl) firstSeatEl = el;
+                }
+            });
+
+            if (!firstSeatEl) {
+                if (retries < 8) {
+                    setTimeout(() => focusPurchasedSeatsInMap(retries + 1), 300);
+                }
+                return;
+            }
+
+            // Scroll suave al primer asiento
+            firstSeatEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+            // Zoom temporal del mapa alrededor del primer asiento para facilitar foco visual.
+            const mapRect = map.getBoundingClientRect();
+            const seatRect = firstSeatEl.getBoundingClientRect();
+            const cx = ((seatRect.left + seatRect.width / 2 - mapRect.left) / Math.max(1, mapRect.width)) * 100;
+            const cy = ((seatRect.top + seatRect.height / 2 - mapRect.top) / Math.max(1, mapRect.height)) * 100;
+
+            map.style.transformOrigin = `${cx}% ${cy}%`;
+            map.style.transform = 'scale(1.12)';
+            map.style.transition = 'transform 260ms ease';
+
+            setTimeout(() => {
+                map.style.transform = 'scale(1)';
+            }, 2200);
+        }
+
+        function openWompiCheckout(sessionData) {
+            if (!window.WidgetCheckout) {
+                throw new Error('No se pudo cargar el widget de Wompi. Revisa conexión a internet o el CDN.');
+            }
+            if (!sessionData.publicKey || !sessionData.reference || !sessionData.amountInCents || !sessionData.currency) {
+                throw new Error('La sesión de Wompi llegó incompleta. Verifica WOMPI_PUBLIC_KEY y configuración backend.');
+            }
+            if (!sessionData.integritySignature) {
+                throw new Error('Falta la firma de integridad. Verifica WOMPI_INTEGRITY_SECRET en backend.');
+            }
+            const redirectWithRef = (() => {
+                try {
+                    const url = new URL(sessionData.redirectUrl);
+                    url.searchParams.set('reference', sessionData.reference);
+                    url.searchParams.set('eventId', String(EVENT_ID));
+                    return url.toString();
+                } catch (_) {
+                    const sep = sessionData.redirectUrl.includes('?') ? '&' : '?';
+                    return `${sessionData.redirectUrl}${sep}reference=${encodeURIComponent(sessionData.reference)}&eventId=${encodeURIComponent(String(EVENT_ID))}`;
+                }
+            })();
+            const checkout = new WidgetCheckout({
+                currency: sessionData.currency,
+                amountInCents: sessionData.amountInCents,
+                reference: sessionData.reference,
+                publicKey: sessionData.publicKey,
+                signature: {
+                    integrity: sessionData.integritySignature
+                },
+                redirectUrl: redirectWithRef,
+                customerData: {
+                    email: sessionData.customerEmail
+                }
+            });
+            checkout.open((result) => {
+                log(`[WOMPI] Resultado checkout: ${JSON.stringify(result)}`, 'log-sys');
+            });
+        }
+
+        async function fetchEvents() {
+            try {
+                log('API CALL: GET /api/events...', 'log-info');
+                const response = await fetch('http://localhost:8080/api/events');
+                ALL_EVENTS = await response.json();
+                
+                const listEl = document.getElementById('eventList');
+                if (ALL_EVENTS.length === 0) {
+                    listEl.innerText = "No hay eventos disponibles.";
+                    return;
+                }
+
+                listEl.innerHTML = ALL_EVENTS.map(ev => `
+                    <div onclick="selectEvent(${ev.id})" style="cursor:pointer; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 5px; border-left: 3px solid ${ev.id == EVENT_ID ? 'var(--accent-color)' : '#444'};">
+                        <strong>${ev.name}</strong> - ${ev.venue}<br/>
+                        <span style="font-size: 0.8em; color: #777;">ID: ${ev.id} | Grid: ${ev.rowCount}x${ev.columnCount} | Fecha: ${new Date(ev.eventDate).toLocaleString()}</span>
+                    </div>
+                `).join('');
+                
+                log(`API RECV: ${ALL_EVENTS.length} eventos encontrados.`, 'log-recv');
+                
+                // Inicializar mapa para el primer evento si no hay uno seleccionado
+                const currentEvent = ALL_EVENTS.find(e => e.id == EVENT_ID);
+                if (currentEvent) {
+                    renderLayout(currentEvent);
+                }
+            } catch (err) {
+                log(`API ERROR: ${err.message}`, 'log-error');
+                document.getElementById('eventList').innerText = "Error al cargar eventos.";
+            }
+        }
+
+        function selectEvent(id) {
+            window.location.href = window.location.pathname + "?eventId=" + id;
+        }
+
+        // Llamar a discovery al iniciar
+        fetchEvents();
+
+        function log(message, type) {
+            const panel = document.getElementById('logsPanel');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toISOString().split('T')[1].substring(0, 8);
+            entry.innerHTML = `[${time}] ${message}`;
+            panel.prepend(entry);
+        }
+
+        function renderLayout(event) {
+            const displayStr = event.layoutConfig ? 
+                `Mi ID: ${MY_USER_ID} | Evento Actual: ${event.name} (Layout Pro)` : 
+                `Mi ID: ${MY_USER_ID} | Evento Actual: ${event.name} (${event.rowCount}x${event.columnCount})`;
+            
+            document.getElementById('userIdDisplay').innerText = displayStr;
+            SECTION_PRICE_MAP = {};
+            if (event.layoutConfig) {
+                try {
+                    const layoutObj = (typeof event.layoutConfig === 'string')
+                        ? JSON.parse(event.layoutConfig)
+                        : event.layoutConfig;
+                    if (layoutObj?.sections && Array.isArray(layoutObj.sections)) {
+                        layoutObj.sections.forEach((section) => {
+                            const price = Number(section.basePriceCents);
+                            if (section.name && Number.isFinite(price) && price > 0) {
+                                SECTION_PRICE_MAP[section.name] = Math.round(price);
+                            }
+                        });
+                    }
+                } catch (_) {
+                    // ignore parse here; createProSeatMap hará fallback/log si falla.
+                }
+            }
+            
+            if (event.layoutConfig) {
+                try {
+                    const layout = (typeof event.layoutConfig === 'string')
+                        ? JSON.parse(event.layoutConfig)
+                        : event.layoutConfig;
+                    createProSeatMap(layout);
+                } catch (e) {
+                    log(`ERROR PARSING LAYOUT: ${e.message}`, 'log-error');
+                    createSeatMap(event.rowCount, event.columnCount);
+                }
+            } else {
+                createSeatMap(event.rowCount, event.columnCount);
+            }
+            refreshCheckoutSummary();
+            setTimeout(focusPurchasedSeatsInMap, 250);
+        }
+
+        function createProSeatMap(layout) {
+            const map = document.getElementById('seatMap');
+            map.innerHTML = '';
+            map.classList.add('pro-layout');
+            const metaSeatSize = Number(layout?.meta?.seatSize);
+            const metaSeatGap = Number(layout?.meta?.seatGap);
+            const PRO_SEAT_SIZE = (Number.isFinite(metaSeatSize) && metaSeatSize >= 8 && metaSeatSize <= 40)
+                ? metaSeatSize
+                : 12;
+            const PRO_SEAT_GAP = (Number.isFinite(metaSeatGap) && metaSeatGap >= 0 && metaSeatGap <= 20)
+                ? metaSeatGap
+                : 4;
+            const PRO_SECTION_PADDING = 8;
+            const PRO_TITLE_HEIGHT = 28;
+
+            const originMarker = document.createElement('div');
+            originMarker.className = 'origin-cross';
+            originMarker.title = '(0,0)';
+            map.appendChild(originMarker);
+            
+            if (!layout.sections || layout.sections.length === 0) {
+                map.innerHTML = '<div style="color:#777">No hay secciones definidas en el layout.</div>';
+                return;
+            }
+
+            const normalizedSections = layout.sections
+                .map((section, idx) => {
+                    const rows = parseInt(section.rows, 10);
+                    const cols = parseInt(section.cols, 10);
+                    if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1) {
+                        return null;
+                    }
+                    return {
+                        raw: section,
+                        idx,
+                        rows,
+                        cols,
+                        name: section.name || `SECCION_${idx + 1}`,
+                        x: Number(section.x),
+                        y: Number(section.y)
+                    };
+                })
+                .filter(Boolean);
+
+            if (normalizedSections.length === 0) {
+                map.innerHTML = '<div style="color:#777">El layout no contiene secciones válidas.</div>';
+                return;
+            }
+
+            const mapWidth = map.clientWidth || 900;
+            let autoX = 20;
+            let autoY = 20;
+            let rowMaxHeight = 0;
+            const gap = 20;
+            let maxBottom = 0;
+            const hasAnyPosition = normalizedSections.some(s => Number.isFinite(s.x) && Number.isFinite(s.y));
+            const positionScale = 1;
+
+            const normalizedPlatforms = (() => {
+                if (Array.isArray(layout.tarimas)) return layout.tarimas;
+                if (layout.tarima && typeof layout.tarima === 'object') return [layout.tarima];
+                return [];
+            })()
+                .map((platform, idx) => {
+                    const width = Number(platform.width);
+                    const height = Number(platform.height);
+                    const x = Number(platform.x);
+                    const y = Number(platform.y);
+                    const rotation = Number(platform.rotation);
+                    const enabled = platform.enabled !== false;
+                    if (!enabled) return null;
+                    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+                        return null;
+                    }
+                    return {
+                        name: platform.name || `Tarima ${idx + 1}`,
+                        width,
+                        height,
+                        x: Number.isFinite(x) ? x : 0,
+                        y: Number.isFinite(y) ? y : 0,
+                        rotation: Number.isFinite(rotation) ? rotation : 0
+                    };
+                })
+                .filter(Boolean);
+
+            normalizedPlatforms.forEach((platform) => {
+                const platformDiv = document.createElement('div');
+                platformDiv.className = 'stage-platform';
+                platformDiv.innerText = platform.name.toUpperCase();
+                platformDiv.style.width = `${Math.max(30, platform.width)}px`;
+                platformDiv.style.height = `${Math.max(20, platform.height)}px`;
+                platformDiv.style.left = `${Math.max(0, platform.x * positionScale)}px`;
+                platformDiv.style.top = `${Math.max(0, platform.y * positionScale)}px`;
+                platformDiv.style.transform = `rotate(${platform.rotation}deg)`;
+                platformDiv.style.transformOrigin = 'center center';
+                map.appendChild(platformDiv);
+                maxBottom = Math.max(maxBottom, platform.y + platform.height);
+            });
+
+            normalizedSections.forEach(section => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'pro-section-box';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'pro-section-title';
+                nameDiv.innerHTML = `<span>${section.name}</span><span>${section.rows}x${section.cols}</span>`;
+                sectionDiv.appendChild(nameDiv);
+
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'pro-section-grid';
+                gridDiv.style.gridTemplateColumns = `repeat(${section.cols}, ${PRO_SEAT_SIZE}px)`;
+                gridDiv.style.gap = `${PRO_SEAT_GAP}px`;
+
+                for (let r = 0; r < section.rows; r++) {
+                    const rowLabel = String.fromCharCode(65 + r);
+                    for (let c = 1; c <= section.cols; c++) {
+                        const seatId = `${section.name}-${rowLabel}${c}`;
+                        const seat = createSeatElement(seatId, `${rowLabel}${c}`);
+                        seat.style.width = `${PRO_SEAT_SIZE}px`;
+                        seat.style.height = `${PRO_SEAT_SIZE}px`;
+                        seat.style.borderRadius = `${Math.max(2, Math.round(PRO_SEAT_SIZE * 0.25))}px`;
+                        seat.style.fontSize = `${Math.max(7, Math.min(12, Math.round(PRO_SEAT_SIZE * 0.55)))}px`;
+                        seat.style.boxShadow = 'none';
+                        gridDiv.appendChild(seat);
+                    }
+                }
+                
+                sectionDiv.appendChild(gridDiv);
+
+                // Compatibilidad con layout builder: si trae x,y, los usamos.
+                // Si no trae posiciones, hacemos autolayout para que el mapa siga siendo legible.
+                const estimatedWidth = (section.cols * PRO_SEAT_SIZE) + ((section.cols - 1) * PRO_SEAT_GAP) + (PRO_SECTION_PADDING * 2);
+                const estimatedHeight = (section.rows * PRO_SEAT_SIZE) + ((section.rows - 1) * PRO_SEAT_GAP) + (PRO_SECTION_PADDING * 2) + PRO_TITLE_HEIGHT;
+                const hasPos = Number.isFinite(section.x) && Number.isFinite(section.y);
+                sectionDiv.style.width = `${estimatedWidth}px`;
+                sectionDiv.style.height = `${estimatedHeight}px`;
+
+                if (hasPos) {
+                    const scaledX = Math.max(0, section.x * positionScale);
+                    const scaledY = Math.max(0, section.y * positionScale);
+                    sectionDiv.style.left = `${scaledX}px`;
+                    sectionDiv.style.top = `${scaledY}px`;
+                    maxBottom = Math.max(maxBottom, scaledY + estimatedHeight);
+                } else {
+                    if (autoX + estimatedWidth > mapWidth - 30) {
+                        autoX = 20;
+                        autoY += rowMaxHeight + gap;
+                        rowMaxHeight = 0;
+                    }
+                    sectionDiv.style.left = `${autoX}px`;
+                    sectionDiv.style.top = `${autoY}px`;
+                    autoX += estimatedWidth + gap;
+                    rowMaxHeight = Math.max(rowMaxHeight, estimatedHeight);
+                    maxBottom = Math.max(maxBottom, autoY + estimatedHeight);
+                }
+
+                map.appendChild(sectionDiv);
+            });
+
+            map.style.minHeight = `${Math.max(420, maxBottom + 30)}px`;
+        }
+
+        function createSeatElement(seatId, label) {
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.id = `seat-${seatId}`;
+            seat.dataset.id = seatId;
+            seat.dataset.state = 'AVAILABLE';
+            seat.innerText = label;
+            seat.addEventListener('click', () => handleSeatClick(seatId));
+            return seat;
+        }
+
+        function createSeatMap(rowCount, colCount) {
+            const map = document.getElementById('seatMap');
+            map.innerHTML = '';
+            map.classList.remove('pro-layout');
+            map.style.minHeight = '';
+            
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'section-grid';
+            gridDiv.style.gridTemplateColumns = `repeat(${colCount}, 40px)`;
+
+            for (let r = 0; r < rowCount; r++) {
+                const rowLabel = String.fromCharCode(65 + r);
+                for (let c = 1; c <= colCount; c++) {
+                    const seatId = `${rowLabel}${c}`;
+                    const seat = createSeatElement(seatId, seatId);
+                    gridDiv.appendChild(seat);
+                }
+            }
+            map.appendChild(gridDiv);
+        }
+
+        function handleSeatClick(seatId) {
+            if (!ws || !ws.connected) {
+                alert("Debes conectar el WebSocket primero.");
+                return;
+            }
+
+            const seatEl = document.getElementById(`seat-${seatId}`);
+            const currentState = seatEl.dataset.state;
+
+            if (currentState === 'SOLD' || currentState === 'LOCKED_OTHER') {
+                return; // No interactuable
+            }
+
+            if (currentState === 'AVAILABLE') {
+                // Lock Request
+                const payload = { eventId: EVENT_ID, seatId: seatId, action: 'LOCKED', userId: MY_USER_ID };
+                log(`SEND: /app/seat.lock.${EVENT_ID} -> ${JSON.stringify(payload)}`, 'log-send');
+                ws.send(`/app/seat.lock.${EVENT_ID}`, {}, JSON.stringify(payload));
+                
+            } else if (currentState === 'LOCKED_ME') {
+                // Unlock Request
+                const payload = { eventId: EVENT_ID, seatId: seatId, action: 'AVAILABLE', userId: MY_USER_ID };
+                log(`SEND: /app/seat.unlock.${EVENT_ID} -> ${JSON.stringify(payload)}`, 'log-send');
+                ws.send(`/app/seat.unlock.${EVENT_ID}`, {}, JSON.stringify(payload));
+            }
+        }
+
+        function updateSeatVisual(seatId, state) {
+            const seatEl = document.getElementById(`seat-${seatId}`);
+            if (!seatEl) return;
+
+            seatEl.className = 'seat'; // Reset
+            seatEl.dataset.state = state;
+
+            if (state === 'SOLD') seatEl.classList.add('sold');
+            else if (state === 'LOCKED_ME') seatEl.classList.add('locked-me');
+            else if (state === 'LOCKED_OTHER') seatEl.classList.add('locked-other');
+            refreshCheckoutSummary();
+        }
+
+        function handleIncomingMessage(data) {
+            log(`RECV: ${JSON.stringify(data)}`, 'log-recv');
+
+            // data.state es "LOCKED", "AVAILABLE" o "SOLD" según SeatWebSocketController
+            let visualState = data.state;
+            
+            // Si el backend marca esto como INITIAL_STATE en la accion (como definimos en SeatWebSocketController)
+            if (data.action === 'INITIAL_STATE') {
+                log(`[SISTEMA] Cargando estado inicial de asiento ${data.seatId}`, 'log-sys');
+            }
+             
+            if (visualState === 'LOCKED') {
+                visualState = (data.userId === MY_USER_ID) ? 'LOCKED_ME' : 'LOCKED_OTHER';
+            }
+            updateSeatVisual(data.seatId, visualState);
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.connected) return;
+            log(`[SISTEMA] Conectando a WS en localhost:8080...`, 'log-sys');
+            
+            let socket = new SockJS('http://localhost:8080/seats-ws');
+            ws = Stomp.over(socket);
+            ws.debug = null; // Ocultar pings en consola
+
+            ws.connect({}, function (frame) {
+                log(`[SISTEMA] Conectado a Stomp: ` + frame, 'log-sys');
+                document.getElementById('btnConnect').disabled = true;
+                document.getElementById('btnConnect').innerText = 'Conectado';
+                document.getElementById('btnSimulateOther').disabled = false;
+                document.getElementById('btnCheckout').disabled = false;
+                
+                const topic = `/topic/event.${EVENT_ID}`;
+                log(`[SISTEMA] Suscribiéndose a: ${topic}`, 'log-sys');
+                
+                ws.subscribe(topic, function (response) {
+                    const data = JSON.parse(response.body);
+                    handleIncomingMessage(data);
+                });
+
+                // Solicitar estado inicial al backend una vez suscritos
+                const payload = { eventId: EVENT_ID, userId: MY_USER_ID };
+                log(`[SISTEMA] Solicitando estado inicial a /app/seat.initialState.${EVENT_ID}...`, 'log-sys');
+                ws.send(`/app/seat.initialState.${EVENT_ID}`, {}, JSON.stringify(payload));
+                
+            }, function(error) {
+                log(`[ERROR] Conexión WS fallida: ` + error, 'log-sys');
+                document.getElementById('btnConnect').disabled = false;
+                document.getElementById('btnConnect').innerText = 'Reintentar Conexión';
+            });
+        }
+
+        function connectBotAndSimulate() {
+            if (isSimulating) {
+                // Detener bot
+                clearInterval(botInterval);
+                if (botWs) botWs.disconnect();
+                isSimulating = false;
+                document.getElementById('btnSimulateOther').innerText = "Simular Otro Usuario (Bot WS)";
+                log(`[SISTEMA] Bot de simulación detenido.`, 'log-sys');
+                return;
+            }
+
+            document.getElementById('btnSimulateOther').innerText = "Conectando Bot...";
+            document.getElementById('btnSimulateOther').disabled = true;
+
+            const botId = "user_BOT_99";
+            log(`[SISTEMA] Conectando Bot (ID: ${botId}) a WS...`, 'log-sys');
+
+            let socket = new SockJS('http://localhost:8080/seats-ws');
+            botWs = Stomp.over(socket);
+            botWs.debug = null;
+
+            botWs.connect({}, function (frame) {
+                isSimulating = true;
+                document.getElementById('btnSimulateOther').disabled = false;
+                document.getElementById('btnSimulateOther').innerText = "Detener Bot";
+                log(`[SISTEMA] Bot conectado. Iniciando acciones aleatorias...`, 'log-sys');
+
+                botWs.subscribe(`/topic/event.${EVENT_ID}`, function (response) {
+                    // El bot no hace nada con los mensajes recibidos para la UI, ya los recibe el WS principal
+                });
+
+                botInterval = setInterval(() => {
+                    if (!botWs.connected) return;
+                    const seatEls = Array.from(document.querySelectorAll('.seat'));
+                    if (seatEls.length === 0) return;
+                    const randomSeatEl = seatEls[Math.floor(Math.random() * seatEls.length)];
+                    const targetSeat = randomSeatEl.dataset.id;
+                    
+                    const el = document.getElementById(`seat-${targetSeat}`);
+                    if (!el) return;
+                    
+                    if (el.dataset.state === 'AVAILABLE') {
+                        const payload = { eventId: EVENT_ID, seatId: targetSeat, action: 'LOCKED', userId: botId };
+                        log(`[BOT] SEND LOCK: ${targetSeat}`, 'log-send');
+                        botWs.send(`/app/seat.lock.${EVENT_ID}`, {}, JSON.stringify(payload));
+                    } else if (el.dataset.state === 'LOCKED_OTHER') {
+                        // El bot solo libera sus propias sillas
+                        // Necesitaríamos saber quién bloqueó la silla, por ahora asumimos que el bot libera aleatoriamente
+                        // si intentamos liberar la de otro, el backend lo impedirá (debido a SeatLockService checking owner)
+                        const payload = { eventId: EVENT_ID, seatId: targetSeat, action: 'AVAILABLE', userId: botId };
+                        log(`[BOT] SEND UNLOCK: ${targetSeat}`, 'log-send');
+                        botWs.send(`/app/seat.unlock.${EVENT_ID}`, {}, JSON.stringify(payload));
+                    }
+                }, 3000);
+
+            }, function(error) {
+                log(`[ERROR] Bot falló al conectar: ` + error, 'log-sys');
+                document.getElementById('btnSimulateOther').disabled = false;
+                document.getElementById('btnSimulateOther').innerText = "Simular Otro Usuario (Bot WS)";
+            });
+        }
+
+        async function processCheckout() {
+            // Recolectar mis sillas bloqueadas
+            const mySeats = Array.from(document.querySelectorAll('.seat.locked-me')).map(el => el.dataset.id);
+            const buyerEmail = (document.getElementById('buyerEmailInput').value || '').trim();
+            
+            if (mySeats.length === 0) {
+                alert("No tienes sillas en tu carrito para pagar.");
+                return;
+            }
+            if (!buyerEmail || !buyerEmail.includes('@')) {
+                alert("Ingresa un email válido para continuar con el pago.");
+                return;
+            }
+
+            log(`[SISTEMA] Iniciando pago de ${mySeats.length} sillas...`, 'log-sys');
+            document.getElementById('btnCheckout').disabled = true;
+            document.getElementById('btnCheckout').innerText = "Procesando...";
+
+            try {
+                const response = await fetch('http://localhost:8080/api/payments/wompi/checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        eventId: EVENT_ID,
+                        seatIds: mySeats,
+                        sessionId: MY_USER_ID,
+                        buyerEmail
+                    })
+                });
+
+                if (response.ok) {
+                    const session = await response.json();
+                    const totalsEl = document.getElementById('checkoutTotals');
+                    const subtotal = session.subtotalCents || 0;
+                    const fee = session.serviceFeeCents || 0;
+                    const total = session.amountInCents || 0;
+                    totalsEl.innerText = `Subtotal: ${formatCop(subtotal)} | Fee: ${formatCop(fee)} | Total: ${formatCop(total)} | Ref: ${session.reference}`;
+                    log(`[SISTEMA] Sesión Wompi creada. Ref: ${session.reference}`, 'log-sys');
+                    openWompiCheckout(session);
+                } else {
+                    const err = await response.json();
+                    alert("Error en el pago: " + err.mensaje);
+                    log(`[ERROR] Pago falló: ${err.mensaje}`, 'log-sys');
+                }
+            } catch (error) {
+                const errMsg = normalizeErrorMessage(error);
+                alert("No se pudo iniciar el pago (" + errMsg + ")");
+                log(`[ERROR] Error iniciando checkout: ${errMsg}`, 'log-sys');
+            } finally {
+                document.getElementById('btnCheckout').disabled = false;
+                document.getElementById('btnCheckout').innerText = "Ir a Pagar";
+            }
+        }
+
+        // Init
+        document.getElementById('btnConnect').addEventListener('click', connectWebSocket);
+        document.getElementById('btnSimulateOther').addEventListener('click', connectBotAndSimulate);
+        document.getElementById('btnCheckout').addEventListener('click', processCheckout);
+
+    </script>
+</body>
+</html>

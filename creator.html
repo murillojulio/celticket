@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Escenarios - Premium</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@19",
+                "react-dom": "https://esm.sh/react-dom@19",
+                "react-dom/client": "https://esm.sh/react-dom@19/client",
+                "seatmap-creator": "https://esm.sh/seatmap-creator?deps=react@19,react-dom@19"
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #root {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .sidebar h1 {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .tool-group {
+            margin-bottom: 2rem;
+        }
+
+        .tool-group h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .main-canvas {
+            flex: 1;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        .seat-map-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Customize seatmap library defaults if possible via CSS */
+        .sc-editor-canvas {
+            background: transparent !important;
+        }
+
+        .export-section {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+
+        .label-badge {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            background: var(--accent);
+            color: black;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useCallback, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { SeatingEditor } from 'seatmap-creator';
+
+        const ErrorFallback = ({ error }) => {
+            return React.createElement('div', { 
+                style: { 
+                    padding: '2rem', 
+                    color: '#ef4444', 
+                    background: '#1e293b', 
+                    height: '100%', 
+                    width: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                } 
+            },
+                React.createElement('h2', null, 'Error al cargar el editor'),
+                React.createElement('pre', { style: { marginTop: '1rem', whiteSpace: 'pre-wrap' } }, error.message)
+            );
+        };
+
+        const App = () => {
+            const [layout, setLayout] = useState({
+                seats: [],
+                sections: [],
+                labels: []
+            });
+            const [hasError, setHasError] = useState(false);
+            const [error, setError] = useState(null);
+
+            // Error Boundary-like mechanism
+            React.useEffect(() => {
+                const handleError = (e) => {
+                    setHasError(true);
+                    setError(e.error || new Error(e.message));
+                };
+                window.addEventListener('error', handleError);
+                return () => window.removeEventListener('error', handleError);
+            }, []);
+
+            if (hasError) return React.createElement(ErrorFallback, { error });
+
+            const handleExport = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(layout, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "escenario_layout.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            };
+
+            const addTarima = () => {
+                const newLabel = {
+                    id: 'tarima-' + Date.now(),
+                    text: 'TARIMA',
+                    x: 400,
+                    y: 100,
+                    fontSize: 24,
+                    fontWeight: 'bold',
+                    color: '#f59e0b',
+                    rotation: 0
+                };
+                setLayout(prev => ({
+                    ...prev,
+                    labels: [...prev.labels, newLabel]
+                }));
+            };
+
+            const addSillas = () => {
+                const newSection = {
+                    id: 'section-' + Date.now(),
+                    name: 'Bloque Sillas',
+                    x: 400,
+                    y: 300,
+                    rows: 5,
+                    cols: 10,
+                    seatType: 'default',
+                    color: '#6366f1'
+                };
+                setLayout(prev => ({
+                    ...prev,
+                    sections: [...prev.sections, newSection]
+                }));
+            };
+
+            try {
+                return React.createElement('div', { className: 'root-container', style: { display: 'flex', width: '100%', height: '100%' } },
+                    React.createElement('aside', { className: 'sidebar' },
+                        React.createElement('h1', null, 'ESCENARIO PRO'),
+                        
+                        React.createElement('div', { className: 'tool-group' },
+                            React.createElement('h3', null, 'Elementos'),
+                            React.createElement('button', { className: 'btn', onClick: addTarima }, 
+                                React.createElement('span', null, '🎭'),
+                                'Agregar Tarima'
+                            ),
+                            React.createElement('button', { className: 'btn', onClick: addSillas }, 
+                                React.createElement('span', null, '🪑'),
+                                'Agregar Bloque Sillas'
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'export-section' },
+                            React.createElement('button', { className: 'btn btn-primary', onClick: handleExport }, 
+                                React.createElement('span', null, '💾'),
+                                'Exportar JSON'
+                            )
+                        )
+                    ),
+                    React.createElement('main', { className: 'main-canvas' },
+                        React.createElement(SeatingEditor, {
+                            layout: layout,
+                            onChange: (newLayout) => setLayout(newLayout),
+                            config: {
+                                showGrid: true,
+                                snapToGrid: true,
+                                canEditLabels: true,
+                                canEditSections: true
+                            }
+                        })
+                    )
+                );
+            } catch (e) {
+                setHasError(true);
+                setError(e);
+                return null;
+            }
+        };
+
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
