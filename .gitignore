@@ -9,6 +9,10 @@
 backend.log
 backend/startup_debug.txt
 
+# Local database files
+*.mv.db
+*.trace.db
+
 # Java / Maven
 backend/target/
 backend/.mvn/
