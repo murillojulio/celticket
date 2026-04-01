@@ -351,6 +351,8 @@
             MY_USER_ID = "sess_" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             localStorage.setItem("celticket_session_id", MY_USER_ID);
         }
+        const SESSION_TOKEN_KEY = "celticket_session_token";
+        let MY_AUTH_TOKEN = localStorage.getItem(SESSION_TOKEN_KEY) || "";
         
         let ws = null;
         let botWs = null;
@@ -401,6 +403,35 @@
             } catch (_) {
                 return String(error);
             }
+        }
+
+        async function ensureGuestToken() {
+            if (MY_AUTH_TOKEN) return MY_AUTH_TOKEN;
+            const response = await fetch('http://localhost:8080/api/auth/guest-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: MY_USER_ID })
+            });
+            if (!response.ok) {
+                throw new Error(`No se pudo crear token de sesion (${response.status})`);
+            }
+            const data = await response.json();
+            if (!data.token) {
+                throw new Error('La API no devolvio token para sesion invitada.');
+            }
+            MY_AUTH_TOKEN = data.token;
+            localStorage.setItem(SESSION_TOKEN_KEY, MY_AUTH_TOKEN);
+            return MY_AUTH_TOKEN;
+        }
+
+        function buildAuthHeaders(baseHeaders = {}) {
+            const headers = {
+                ...baseHeaders
+            };
+            if (MY_AUTH_TOKEN) {
+                headers['Authorization'] = `Bearer ${MY_AUTH_TOKEN}`;
+            }
+            return headers;
         }
 
         function focusPurchasedSeatsInMap(retries = 0) {
@@ -456,10 +487,11 @@
                     const url = new URL(sessionData.redirectUrl);
                     url.searchParams.set('reference', sessionData.reference);
                     url.searchParams.set('eventId', String(EVENT_ID));
+                    url.searchParams.set('sessionId', MY_USER_ID);
                     return url.toString();
                 } catch (_) {
                     const sep = sessionData.redirectUrl.includes('?') ? '&' : '?';
-                    return `${sessionData.redirectUrl}${sep}reference=${encodeURIComponent(sessionData.reference)}&eventId=${encodeURIComponent(String(EVENT_ID))}`;
+                    return `${sessionData.redirectUrl}${sep}reference=${encodeURIComponent(sessionData.reference)}&eventId=${encodeURIComponent(String(EVENT_ID))}&sessionId=${encodeURIComponent(MY_USER_ID)}`;
                 }
             })();
             const checkout = new WidgetCheckout({
@@ -937,9 +969,10 @@
             document.getElementById('btnCheckout').innerText = "Procesando...";
 
             try {
+                await ensureGuestToken();
                 const response = await fetch('http://localhost:8080/api/payments/wompi/checkout-session', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
                         eventId: EVENT_ID,
                         seatIds: mySeats,

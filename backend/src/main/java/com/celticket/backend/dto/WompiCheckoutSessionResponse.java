@@ -5,8 +5,8 @@ import java.util.List;
 public class WompiCheckoutSessionResponse {
     private String reference;
     private Integer amountInCents;
-    private Integer subtotalCents;
-    private Integer serviceFeeCents;
+    private Integer subtotal;
+    private Integer serviceFee;
     private String currency;
     private String publicKey;
     private String integritySignature;
@@ -19,10 +19,10 @@ public class WompiCheckoutSessionResponse {
     public void setReference(String reference) { this.reference = reference; }
     public Integer getAmountInCents() { return amountInCents; }
     public void setAmountInCents(Integer amountInCents) { this.amountInCents = amountInCents; }
-    public Integer getSubtotalCents() { return subtotalCents; }
-    public void setSubtotalCents(Integer subtotalCents) { this.subtotalCents = subtotalCents; }
-    public Integer getServiceFeeCents() { return serviceFeeCents; }
-    public void setServiceFeeCents(Integer serviceFeeCents) { this.serviceFeeCents = serviceFeeCents; }
+    public Integer getSubtotal() { return subtotal; }
+    public void setSubtotal(Integer subtotal) { this.subtotal = subtotal; }
+    public Integer getServiceFee() { return serviceFee; }
+    public void setServiceFee(Integer serviceFee) { this.serviceFee = serviceFee; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public String getPublicKey() { return publicKey; }

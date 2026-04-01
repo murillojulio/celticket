@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celticket - Creador de Escenario</title>
+    <title>Celticket Layout Studio</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -39,23 +39,29 @@
             border: 1px solid #334155;
             border-radius: 12px;
             padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
         h1 {
-            margin: 0 0 10px 0;
+            margin: 0;
             color: var(--accent);
             font-size: 20px;
         }
 
-        .subtitle {
-            margin: 0 0 14px 0;
+        .group-label {
+            font-size: 11px;
+            font-weight: 700;
             color: var(--muted);
-            font-size: 13px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-top: 4px;
         }
 
         .form {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
 
@@ -96,37 +102,49 @@
         .btn-red { background: var(--danger); }
 
         .section-list {
-            margin-top: 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 210px;
+            gap: 6px;
+            max-height: 260px;
             overflow-y: auto;
+            padding-right: 4px;
         }
 
         .section-item {
             background: var(--panel-soft);
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 8px;
+            padding: 9px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .section-item .title {
+            font-weight: 700;
+            color: #f8fafc;
             font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .section-item .meta {
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.2;
         }
 
         .json-box {
-            margin-top: 10px;
             width: 100%;
-            min-height: 170px;
+            min-height: 130px;
             resize: vertical;
             background: #020617;
-            color: #dbeafe;
+            color: #bfdbfe;
             border: 1px solid #334155;
             border-radius: 8px;
             padding: 10px;
             font-family: Consolas, monospace;
+            font-size: 12px;
         }
 
         .right {
@@ -158,9 +176,9 @@
             width: 100%;
             min-height: 620px;
             border-radius: 10px;
-            border: 1px dashed #64748b;
+            border: 1px dashed #475569;
             background:
-                radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.22) 1px, transparent 0);
+                radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.16) 1px, transparent 0);
             background-size: 22px 22px;
             overflow: hidden;
         }
@@ -261,7 +279,13 @@
             width: 12px;
             height: 12px;
             border-radius: 3px;
-            background: var(--seat);
+            background: #4caf50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 700;
+            line-height: 1;
         }
 
         .hint {
@@ -299,58 +323,150 @@
             width: 14px;
             height: 2px;
         }
+
+        .context-panel {
+            position: fixed;
+            z-index: 1200;
+            width: 280px;
+            background: #0b1220;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+            padding: 10px;
+            display: none;
+        }
+
+        .context-panel h4 {
+            margin: 0 0 8px 0;
+            color: #dbeafe;
+            font-size: 13px;
+        }
+
+        .context-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .context-form label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .context-form input {
+            background: #020617;
+            color: #e5e7eb;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px;
+        }
+
+        .context-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
     <aside class="panel">
-        <h1>Creador de Escenario</h1>
-        <p class="subtitle">Editor visual de <code>layoutConfig</code> compatible con el mock.</p>
+        <h1>Celticket Layout Studio</h1>
 
         <div class="form">
-            <input id="sectionName" class="full" placeholder="Nombre sección (ej. VIP_A)">
-            <input id="sectionRows" type="number" min="1" max="40" value="5" placeholder="Filas">
-            <input id="sectionCols" type="number" min="1" max="40" value="10" placeholder="Columnas">
-            <input id="sectionBasePrice" type="number" min="1000" step="100" value="20000" placeholder="Precio base (centavos)">
-            <button id="btnAddSection" class="btn-green">Agregar</button>
-            <input id="seatSizeInput" type="number" min="8" max="40" value="12" placeholder="Tamaño asiento">
-            <input id="seatGapInput" type="number" min="0" max="20" value="4" placeholder="Gap asiento">
-            <button id="btnApplySeatStyle" class="btn-gray" type="button">Aplicar Asientos</button>
-            <input id="platformWidth" type="number" min="80" max="900" value="220" placeholder="Ancho tarima">
-            <input id="platformHeight" type="number" min="30" max="220" value="60" placeholder="Alto tarima">
-            <button id="btnUpdatePlatform" class="btn-gray" type="button">Actualizar Seleccionada</button>
-            <button id="btnAddPlatform" class="btn-green full" type="button">Agregar Tarima</button>
-            <button id="btnTogglePlatform" class="btn-gray" type="button">Mostrar/Ocultar Seleccionada</button>
-            <button id="btnRemovePlatform" class="btn-red" type="button">Eliminar Seleccionada</button>
+            <div class="group-label full">Elementos</div>
+            <button id="btnAddSection" class="btn-green full">Agregar Sección</button>
+            <button id="btnAddPlatform" class="btn-green full" type="button">Agregar Escenario</button>
+
+            <div class="group-label full">Escena</div>
+            <button id="btnUndo" class="btn-gray" type="button" title="Ctrl+Z" disabled>Deshacer</button>
+            <button id="btnRedo" class="btn-gray" type="button" title="Ctrl+Y / Ctrl+Shift+Z" disabled>Rehacer</button>
             <button id="btnAutoLayout" class="btn-gray full" type="button">Auto-organizar</button>
             <button id="btnClear" class="btn-red full" type="button">Limpiar todo</button>
         </div>
 
+        <div class="group-label">Contenido</div>
         <div id="sectionList" class="section-list"></div>
 
-        <div style="display:flex; gap:8px; margin-top:10px;">
+        <div class="group-label">JSON</div>
+        <div style="display:flex; gap:8px;">
             <button id="btnExportJson" class="btn-green" type="button">Exportar JSON</button>
             <button id="btnImportJson" class="btn-gray" type="button">Importar JSON</button>
             <button id="btnCopyJson" type="button">Copiar</button>
         </div>
         <textarea id="jsonOutput" class="json-box" spellcheck="false"></textarea>
-        <p class="hint">Puedes ajustar tamaño/gap de asientos y mover, redimensionar o rotar tarimas. El JSON exporta todo en <code>meta</code>.</p>
+        <p class="hint">Clic derecho sobre una sección o escenario para configurar o eliminar.</p>
     </aside>
 
     <section class="right">
         <div class="stage-wrap">
             <div class="stage-header">
-                <span>Escenario visual (arrastra secciones con el mouse)</span>
+                <span>Escenario visual (arrastra elementos con el mouse)</span>
                 <span id="statusText">0 secciones</span>
             </div>
             <div id="stage" class="stage"></div>
         </div>
     </section>
 
+    <div id="sectionContextPanel" class="context-panel">
+        <h4 id="contextTitle">Configurar sección</h4>
+        <div class="context-form">
+            <label style="grid-column:1/-1">Nombre
+                <input id="ctxName" type="text" maxlength="25" placeholder="Nombre sección">
+            </label>
+            <label>Filas
+                <input id="ctxRows" type="number" min="1" max="40" value="5">
+            </label>
+            <label>Columnas
+                <input id="ctxCols" type="number" min="1" max="40" value="10">
+            </label>
+            <label>Tamaño silla (px)
+                <input id="ctxSeatSize" type="number" min="8" max="40" value="12">
+            </label>
+            <label>Separación (px)
+                <input id="ctxSeatGap" type="number" min="0" max="20" value="4">
+            </label>
+            <label style="grid-column:1/-1">Precio base (pesos)
+                <input id="ctxPrice" type="number" min="1000" step="100" value="20000">
+            </label>
+        </div>
+        <div class="context-actions">
+            <button id="btnCtxDeleteSection" class="btn-red" type="button">Eliminar</button>
+            <div style="flex:1"></div>
+            <button id="btnCtxCancel" class="btn-gray" type="button">Cancelar</button>
+            <button id="btnCtxApply" class="btn-green" type="button">Aplicar</button>
+        </div>
+    </div>
+
+    <div id="escenarioContextPanel" class="context-panel">
+        <h4 id="escenarioContextTitle">Configurar escenario</h4>
+        <div class="context-form">
+            <label style="grid-column:1/-1">Nombre
+                <input id="ctxEscName" type="text" maxlength="25" placeholder="Nombre escenario">
+            </label>
+            <label>Ancho (px)
+                <input id="ctxEscWidth" type="number" min="80" max="900" value="220">
+            </label>
+            <label>Alto (px)
+                <input id="ctxEscHeight" type="number" min="30" max="220" value="60">
+            </label>
+        </div>
+        <div class="context-actions">
+            <button id="btnCtxDeleteEscenario" class="btn-red" type="button">Eliminar</button>
+            <div style="flex:1"></div>
+            <button id="btnCtxEscCancel" class="btn-gray" type="button">Cancelar</button>
+            <button id="btnCtxEscApply" class="btn-green" type="button">Aplicar</button>
+        </div>
+    </div>
+
     <script>
-        function newTarima(partial, idxHint) {
+        function newEscenario(partial, idxHint) {
             return {
                 id: partial?.id || ("t_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6)),
-                name: partial?.name || `Tarima ${idxHint || 1}`,
+                name: partial?.name || `Escenario ${idxHint || 1}`,
                 enabled: partial?.enabled !== false,
                 x: Number.isFinite(Number(partial?.x)) ? Number(partial.x) : (250 + (idxHint || 0) * 18),
                 y: Number.isFinite(Number(partial?.y)) ? Number(partial.y) : 16,
@@ -360,16 +476,30 @@
             };
         }
 
+        const DEFAULTS = {
+            basePrice: 20000,
+            platformWidth: 220,
+            platformHeight: 60
+        };
+
         const model = {
             sections: [],
-            tarimas: [newTarima({}, 1)],
-            selectedTarimaId: null,
+            escenarios: [newEscenario({}, 1)],
+            selectedEscenarioId: null,
             seatStyle: {
                 seatSize: 12,
                 seatGap: 4
-            }
+            },
+            sectionContext: { sectionId: null },
+            escenarioContext: { escenarioId: null }
         };
-        model.selectedTarimaId = model.tarimas[0].id;
+        model.selectedEscenarioId = model.escenarios[0].id;
+
+        const historyState = {
+            undoStack: [],
+            redoStack: [],
+            limit: 100
+        };
 
         let dragState = null;
 
@@ -379,8 +509,12 @@
         }
 
         function sectionPixelSize(section) {
-            const seatSize = model.seatStyle.seatSize;
-            const seatGap = model.seatStyle.seatGap;
+            const seatSize = Number.isFinite(Number(section.seatSize))
+                ? Number(section.seatSize)
+                : model.seatStyle.seatSize;
+            const seatGap = Number.isFinite(Number(section.seatGap))
+                ? Number(section.seatGap)
+                : model.seatStyle.seatGap;
             return {
                 w: section.cols * seatSize + (section.cols - 1) * seatGap + 16,
                 h: section.rows * seatSize + (section.rows - 1) * seatGap + 16 + 28
@@ -393,8 +527,75 @@
             return value;
         }
 
-        function getSelectedTarima() {
-            return model.tarimas.find(t => t.id === model.selectedTarimaId) || null;
+        function getSelectedEscenario() {
+            return model.escenarios.find(t => t.id === model.selectedEscenarioId) || null;
+        }
+
+        function captureStateSnapshot() {
+            return {
+                sections: JSON.parse(JSON.stringify(model.sections)),
+                escenarios: JSON.parse(JSON.stringify(model.escenarios)),
+                selectedEscenarioId: model.selectedEscenarioId,
+                seatStyle: {
+                    seatSize: model.seatStyle.seatSize,
+                    seatGap: model.seatStyle.seatGap
+                }
+            };
+        }
+
+        function updateHistoryButtons() {
+            const btnUndo = document.getElementById("btnUndo");
+            const btnRedo = document.getElementById("btnRedo");
+            if (!btnUndo || !btnRedo) return;
+            btnUndo.disabled = historyState.undoStack.length === 0;
+            btnRedo.disabled = historyState.redoStack.length === 0;
+        }
+
+        function pushHistorySnapshot() {
+            historyState.undoStack.push(captureStateSnapshot());
+            if (historyState.undoStack.length > historyState.limit) {
+                historyState.undoStack.shift();
+            }
+            historyState.redoStack = [];
+            updateHistoryButtons();
+        }
+
+        function restoreSnapshot(snapshot) {
+            if (!snapshot) return;
+            model.sections = JSON.parse(JSON.stringify(snapshot.sections || []));
+            model.escenarios = JSON.parse(JSON.stringify(snapshot.escenarios || []));
+            model.selectedEscenarioId = snapshot.selectedEscenarioId || null;
+            model.seatStyle.seatSize = Number.isFinite(Number(snapshot?.seatStyle?.seatSize))
+                ? Number(snapshot.seatStyle.seatSize)
+                : 12;
+            model.seatStyle.seatGap = Number.isFinite(Number(snapshot?.seatStyle?.seatGap))
+                ? Number(snapshot.seatStyle.seatGap)
+                : 4;
+
+            if (!Array.isArray(model.escenarios) || model.escenarios.length === 0) {
+                model.escenarios = [newEscenario({}, 1)];
+            }
+            if (!model.escenarios.some(e => e.id === model.selectedEscenarioId)) {
+                model.selectedEscenarioId = model.escenarios[0]?.id || null;
+            }
+            hideAllContextMenus();
+            renderStage();
+        }
+
+        function undo() {
+            if (historyState.undoStack.length === 0) return;
+            const previous = historyState.undoStack.pop();
+            historyState.redoStack.push(captureStateSnapshot());
+            restoreSnapshot(previous);
+            updateHistoryButtons();
+        }
+
+        function redo() {
+            if (historyState.redoStack.length === 0) return;
+            const next = historyState.redoStack.pop();
+            historyState.undoStack.push(captureStateSnapshot());
+            restoreSnapshot(next);
+            updateHistoryButtons();
         }
 
         function clampSection(section) {
@@ -406,17 +607,17 @@
             section.y = Math.max(0, Math.min(section.y, maxY));
         }
 
-        function clampTarima(tarima) {
+        function clampEscenario(esc) {
             const stage = document.getElementById("stage");
-            const maxX = Math.max(0, stage.clientWidth - tarima.width);
-            const maxY = Math.max(0, stage.clientHeight - tarima.height);
-            tarima.x = Math.max(0, Math.min(tarima.x, maxX));
-            tarima.y = Math.max(0, Math.min(tarima.y, maxY));
+            const maxX = Math.max(0, stage.clientWidth - esc.width);
+            const maxY = Math.max(0, stage.clientHeight - esc.height);
+            esc.x = Math.max(0, Math.min(esc.x, maxX));
+            esc.y = Math.max(0, Math.min(esc.y, maxY));
         }
 
         function getLayoutConfig() {
             const stage = document.getElementById("stage");
-            const tarimas = model.tarimas.map(t => ({
+            const tarimas = model.escenarios.map(t => ({
                 name: t.name,
                 enabled: t.enabled,
                 x: t.x,
@@ -436,13 +637,14 @@
                     canvasHeight: stage ? stage.clientHeight : null
                 },
                 tarimas,
-                // compatibilidad hacia atrás: frontend que solo entienda una tarima.
                 tarima: tarimas[0] || null,
                 sections: model.sections.map(s => ({
                     name: s.name,
                     rows: s.rows,
                     cols: s.cols,
-                    basePriceCents: s.basePriceCents,
+                    basePrice: s.basePrice,
+                    seatSize: s.seatSize,
+                    seatGap: s.seatGap,
                     x: s.x,
                     y: s.y
                 }))
@@ -453,66 +655,44 @@
             document.getElementById("jsonOutput").value = JSON.stringify(getLayoutConfig(), null, 2);
         }
 
-        function syncPlatformInputs() {
-            const selected = getSelectedTarima();
-            const widthInput = document.getElementById("platformWidth");
-            const heightInput = document.getElementById("platformHeight");
-            if (!selected) {
-                widthInput.value = 220;
-                heightInput.value = 60;
-                return;
-            }
-            widthInput.value = Math.round(selected.width);
-            heightInput.value = Math.round(selected.height);
-        }
-
-        function syncSeatStyleInputs() {
-            document.getElementById("seatSizeInput").value = model.seatStyle.seatSize;
-            document.getElementById("seatGapInput").value = model.seatStyle.seatGap;
-        }
-
         function updateStatus() {
-            const sectionsTotal = model.sections.length;
-            const tarimasTotal = model.tarimas.length;
-            const selected = getSelectedTarima();
-            const selectedInfo = selected ? `seleccionada: ${selected.name}` : "sin selección";
+            const s = model.sections.length;
+            const e = model.escenarios.length;
             document.getElementById("statusText").innerText =
-                `${sectionsTotal} ${sectionsTotal === 1 ? "sección" : "secciones"} | ${tarimasTotal} ${tarimasTotal === 1 ? "tarima" : "tarimas"} | ${selectedInfo}`;
+                `${s} ${s === 1 ? "sección" : "secciones"} | ${e} ${e === 1 ? "escenario" : "escenarios"}`;
         }
 
         function renderSectionList() {
             const list = document.getElementById("sectionList");
             list.innerHTML = "";
 
-            if (model.sections.length === 0) {
-                list.innerHTML = '<div class="section-item"><span style="color:#94a3b8">Sin secciones todavía.</span></div>';
-            } else {
-                model.sections.forEach((s, index) => {
-                    const item = document.createElement("div");
-                    item.className = "section-item";
-                    item.innerHTML = `
-                        <span><strong>${s.name}</strong> - ${s.rows}x${s.cols} - $${Math.round(s.basePriceCents / 100).toLocaleString('es-CO')} - pos(${Math.round(s.x)}, ${Math.round(s.y)})</span>
-                        <button class="btn-red" type="button" onclick="removeSection(${index})">Eliminar</button>
-                    `;
-                    list.appendChild(item);
-                });
+            if (model.sections.length === 0 && model.escenarios.length === 0) {
+                list.innerHTML = '<div class="section-item"><div class="meta">Sin elementos todavía.</div></div>';
             }
 
-            model.tarimas.forEach((t, index) => {
-                const tarimaItem = document.createElement("div");
-                tarimaItem.className = "section-item";
-                tarimaItem.style.borderColor = t.id === model.selectedTarimaId ? "#f59e0b" : "#334155";
-                tarimaItem.innerHTML = `
-                    <span><strong>${t.name}</strong> - ${Math.round(t.width)}x${Math.round(t.height)} - rot(${Math.round(t.rotation)}deg)</span>
-                    <button class="btn-gray" type="button" onclick="selectTarimaByIndex(${index})">Seleccionar</button>
+            model.sections.forEach((s) => {
+                const item = document.createElement("div");
+                item.className = "section-item";
+                item.innerHTML = `
+                    <div class="title">${s.name}</div>
+                    <div class="meta">${s.rows}x${s.cols} · $${s.basePrice.toLocaleString('es-CO')}</div>
                 `;
-                list.appendChild(tarimaItem);
+                list.appendChild(item);
+            });
+
+            model.escenarios.forEach((t) => {
+                const item = document.createElement("div");
+                item.className = "section-item";
+                item.style.borderColor = t.id === model.selectedEscenarioId ? "#f59e0b" : "#334155";
+                item.innerHTML = `
+                    <div class="title">${t.name}</div>
+                    <div class="meta">${Math.round(t.width)}x${Math.round(t.height)} · rot(${Math.round(t.rotation)}°)</div>
+                `;
+                list.appendChild(item);
             });
 
             refreshJsonOutput();
             updateStatus();
-            syncPlatformInputs();
-            syncSeatStyleInputs();
         }
 
         function renderStage() {
@@ -524,40 +704,41 @@
             originMarker.title = "(0,0)";
             stage.appendChild(originMarker);
 
-            model.tarimas.forEach((tarima) => {
-                clampTarima(tarima);
-                if (!tarima.enabled) return;
+            model.escenarios.forEach((esc) => {
+                clampEscenario(esc);
+                if (!esc.enabled) return;
 
                 const platform = document.createElement("div");
-                platform.className = "platform-box" + (tarima.id === model.selectedTarimaId ? " selected" : "");
-                platform.dataset.id = tarima.id;
-                platform.style.left = tarima.x + "px";
-                platform.style.top = tarima.y + "px";
-                platform.style.width = tarima.width + "px";
-                platform.style.height = tarima.height + "px";
-                platform.style.transform = `rotate(${tarima.rotation}deg)`;
+                platform.className = "platform-box" + (esc.id === model.selectedEscenarioId ? " selected" : "");
+                platform.dataset.id = esc.id;
+                platform.style.left = esc.x + "px";
+                platform.style.top = esc.y + "px";
+                platform.style.width = esc.width + "px";
+                platform.style.height = esc.height + "px";
+                platform.style.transform = `rotate(${esc.rotation}deg)`;
                 platform.style.transformOrigin = "center center";
                 platform.addEventListener("mousedown", () => {
-                    model.selectedTarimaId = tarima.id;
+                    model.selectedEscenarioId = esc.id;
                     renderSectionList();
                 });
+                platform.addEventListener("contextmenu", (e) => openEscenarioContextMenu(e, esc.id));
 
                 const title = document.createElement("div");
                 title.className = "platform-title";
-                title.innerText = `${tarima.name.toUpperCase()} (${Math.round(tarima.rotation)}deg)`;
-                title.addEventListener("mousedown", (e) => startInteraction(e, "tarima-move", tarima.id));
+                title.innerText = `${esc.name.toUpperCase()} (${Math.round(esc.rotation)}°)`;
+                title.addEventListener("mousedown", (e) => startInteraction(e, "esc-move", esc.id));
                 platform.appendChild(title);
 
                 const rotateHandle = document.createElement("div");
                 rotateHandle.className = "platform-rotate-handle";
                 rotateHandle.title = "Rotar";
-                rotateHandle.addEventListener("mousedown", (e) => startInteraction(e, "tarima-rotate", tarima.id));
+                rotateHandle.addEventListener("mousedown", (e) => startInteraction(e, "esc-rotate", esc.id));
                 platform.appendChild(rotateHandle);
 
                 const resizeHandle = document.createElement("div");
                 resizeHandle.className = "platform-resize-handle";
                 resizeHandle.title = "Redimensionar";
-                resizeHandle.addEventListener("mousedown", (e) => startInteraction(e, "tarima-resize", tarima.id));
+                resizeHandle.addEventListener("mousedown", (e) => startInteraction(e, "esc-resize", esc.id));
                 platform.appendChild(resizeHandle);
 
                 stage.appendChild(platform);
@@ -580,17 +761,30 @@
                 title.innerHTML = `<span>${section.name}</span><span>${section.rows}x${section.cols}</span>`;
                 title.addEventListener("mousedown", (e) => startInteraction(e, "section-move", section.id));
                 box.appendChild(title);
+                box.addEventListener("contextmenu", (e) => openSectionContextMenu(e, section.id));
 
                 const miniGrid = document.createElement("div");
                 miniGrid.className = "mini-grid";
-                miniGrid.style.gridTemplateColumns = `repeat(${section.cols}, ${model.seatStyle.seatSize}px)`;
-                miniGrid.style.gap = `${model.seatStyle.seatGap}px`;
-                for (let i = 0; i < section.rows * section.cols; i++) {
-                    const seat = document.createElement("div");
-                    seat.className = "mini-seat";
-                    seat.style.width = `${model.seatStyle.seatSize}px`;
-                    seat.style.height = `${model.seatStyle.seatSize}px`;
-                    miniGrid.appendChild(seat);
+                const seatSize = Number.isFinite(Number(section.seatSize))
+                    ? Number(section.seatSize)
+                    : model.seatStyle.seatSize;
+                const seatGap = Number.isFinite(Number(section.seatGap))
+                    ? Number(section.seatGap)
+                    : model.seatStyle.seatGap;
+                miniGrid.style.gridTemplateColumns = `repeat(${section.cols}, ${seatSize}px)`;
+                miniGrid.style.gap = `${seatGap}px`;
+                for (let r = 0; r < section.rows; r++) {
+                    const rowLabel = String.fromCharCode(65 + r);
+                    for (let c = 1; c <= section.cols; c++) {
+                        const seat = document.createElement("div");
+                        seat.className = "mini-seat";
+                        seat.style.width = `${seatSize}px`;
+                        seat.style.height = `${seatSize}px`;
+                        seat.style.borderRadius = `${Math.max(2, Math.round(seatSize * 0.25))}px`;
+                        seat.style.fontSize = `${Math.max(7, Math.min(12, Math.round(seatSize * 0.5)))}px`;
+                        seat.innerText = `${rowLabel}${c}`;
+                        miniGrid.appendChild(seat);
+                    }
                 }
                 box.appendChild(miniGrid);
 
@@ -601,87 +795,75 @@
         }
 
         function addSection() {
-            const name = safeName(document.getElementById("sectionName").value);
-            const rows = parseInt(document.getElementById("sectionRows").value, 10);
-            const cols = parseInt(document.getElementById("sectionCols").value, 10);
-            const basePriceCents = parseInt(document.getElementById("sectionBasePrice").value, 10);
-
-            if (!name) {
-                alert("Nombre inválido. Usa letras, números, _ o -.");
-                return;
-            }
-            if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 40 || cols > 40) {
-                alert("Filas y columnas deben estar entre 1 y 40.");
-                return;
-            }
-            if (!Number.isInteger(basePriceCents) || basePriceCents < 1000) {
-                alert("Precio base inválido. Usa centavos >= 1000.");
-                return;
-            }
-            if (model.sections.some(s => s.name === name)) {
-                alert("Ya existe una sección con ese nombre.");
-                return;
+            pushHistorySnapshot();
+            let name = `SECCION_${model.sections.length + 1}`;
+            let suffix = 2;
+            while (model.sections.some(s => s.name === name)) {
+                name = `SECCION_${model.sections.length + 1}_${suffix}`;
+                suffix++;
             }
 
             model.sections.push({
                 id: "s_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6),
                 name,
-                rows,
-                cols,
-                basePriceCents,
+                rows: 5,
+                cols: 10,
+                basePrice: DEFAULTS.basePrice,
+                seatSize: model.seatStyle.seatSize,
+                seatGap: model.seatStyle.seatGap,
                 x: 20 + model.sections.length * 20,
                 y: 40 + model.sections.length * 20
             });
 
-            document.getElementById("sectionName").value = "";
             renderStage();
         }
 
-        function removeSection(index) {
-            model.sections.splice(index, 1);
+        function removeSectionById(id) {
+            const idx = model.sections.findIndex(s => s.id === id);
+            if (idx >= 0) {
+                pushHistorySnapshot();
+                model.sections.splice(idx, 1);
+                renderStage();
+            }
+        }
+
+        function addEscenario() {
+            pushHistorySnapshot();
+            const esc = newEscenario({}, model.escenarios.length + 1);
+            esc.x = 24 + model.escenarios.length * 20;
+            esc.y = 16 + model.escenarios.length * 20;
+            model.escenarios.push(esc);
+            model.selectedEscenarioId = esc.id;
             renderStage();
         }
 
-        function addPlatform() {
-            const tarima = newTarima({}, model.tarimas.length + 1);
-            tarima.x = 24 + model.tarimas.length * 20;
-            tarima.y = 16 + model.tarimas.length * 20;
-            model.tarimas.push(tarima);
-            model.selectedTarimaId = tarima.id;
-            renderStage();
-        }
-
-        function selectTarimaByIndex(index) {
-            if (!model.tarimas[index]) return;
-            model.selectedTarimaId = model.tarimas[index].id;
-            renderStage();
-        }
-        window.selectTarimaByIndex = selectTarimaByIndex;
-        window.removeSection = removeSection;
-
-        function removeSelectedPlatform() {
-            if (model.tarimas.length === 0) return;
-            const idx = model.tarimas.findIndex(t => t.id === model.selectedTarimaId);
+        function removeEscenarioById(id) {
+            const idx = model.escenarios.findIndex(t => t.id === id);
             if (idx < 0) return;
-            model.tarimas.splice(idx, 1);
-            model.selectedTarimaId = model.tarimas[0]?.id || null;
+            pushHistorySnapshot();
+            model.escenarios.splice(idx, 1);
+            model.selectedEscenarioId = model.escenarios[0]?.id || null;
             renderStage();
         }
 
         function clearAll() {
+            pushHistorySnapshot();
             model.sections = [];
-            model.tarimas = [newTarima({}, 1)];
-            model.selectedTarimaId = model.tarimas[0].id;
+            model.escenarios = [newEscenario({}, 1)];
+            model.selectedEscenarioId = model.escenarios[0].id;
             model.seatStyle.seatSize = 12;
             model.seatStyle.seatGap = 4;
+            hideAllContextMenus();
             renderStage();
         }
 
         function autoLayout() {
+            if (model.sections.length === 0) return;
+            pushHistorySnapshot();
             const stage = document.getElementById("stage");
             let cursorX = 12;
             let firstY = 12;
-            model.tarimas.filter(t => t.enabled).forEach(t => {
+            model.escenarios.filter(t => t.enabled).forEach(t => {
                 firstY = Math.max(firstY, t.y + t.height + 14);
             });
             let cursorY = firstY;
@@ -701,52 +883,6 @@
                 lineHeight = Math.max(lineHeight, size.h);
             });
 
-            renderStage();
-        }
-
-        function updateTarimaSize() {
-            const selected = getSelectedTarima();
-            if (!selected) {
-                alert("No hay tarima seleccionada.");
-                return;
-            }
-            const width = parseInt(document.getElementById("platformWidth").value, 10);
-            const height = parseInt(document.getElementById("platformHeight").value, 10);
-
-            if (!Number.isInteger(width) || !Number.isInteger(height) || width < 80 || width > 900 || height < 30 || height > 220) {
-                alert("Tamaño de tarima inválido. Ancho: 80-900, Alto: 30-220.");
-                return;
-            }
-
-            selected.width = width;
-            selected.height = height;
-            clampTarima(selected);
-            renderStage();
-        }
-
-        function applySeatStyle() {
-            const seatSize = parseInt(document.getElementById("seatSizeInput").value, 10);
-            const seatGap = parseInt(document.getElementById("seatGapInput").value, 10);
-            if (!Number.isInteger(seatSize) || seatSize < 8 || seatSize > 40) {
-                alert("Tamaño de asiento inválido (8-40).");
-                return;
-            }
-            if (!Number.isInteger(seatGap) || seatGap < 0 || seatGap > 20) {
-                alert("Gap de asiento inválido (0-20).");
-                return;
-            }
-            model.seatStyle.seatSize = seatSize;
-            model.seatStyle.seatGap = seatGap;
-            renderStage();
-        }
-
-        function toggleSelectedPlatform() {
-            const selected = getSelectedTarima();
-            if (!selected) {
-                alert("No hay tarima seleccionada.");
-                return;
-            }
-            selected.enabled = !selected.enabled;
             renderStage();
         }
 
@@ -786,25 +922,36 @@
                         name,
                         rows,
                         cols,
-                        basePriceCents: Number.isFinite(Number(s.basePriceCents)) ? Math.max(1000, Math.round(Number(s.basePriceCents))) : 20000,
+                        basePrice: Number.isFinite(Number(s.basePrice)) ? Math.max(1000, Math.round(Number(s.basePrice))) : 20000,
+                        seatSize: Number.isFinite(Number(s.seatSize))
+                            ? Math.max(8, Math.min(40, Number(s.seatSize)))
+                            : (Number.isFinite(Number(parsed?.meta?.seatSize))
+                                ? Math.max(8, Math.min(40, Number(parsed.meta.seatSize)))
+                                : 12),
+                        seatGap: Number.isFinite(Number(s.seatGap))
+                            ? Math.max(0, Math.min(20, Number(s.seatGap)))
+                            : (Number.isFinite(Number(parsed?.meta?.seatGap))
+                                ? Math.max(0, Math.min(20, Number(parsed.meta.seatGap)))
+                                : 4),
                         x: Number.isFinite(Number(s.x)) ? Number(s.x) : 20 + idx * 20,
                         y: Number.isFinite(Number(s.y)) ? Number(s.y) : 20 + idx * 20
                     };
                 });
 
-                let importedTarimas = [];
+                let importedEscenarios = [];
                 if (Array.isArray(parsed.tarimas)) {
-                    importedTarimas = parsed.tarimas.map((t, idx) => newTarima(t, idx + 1));
+                    importedEscenarios = parsed.tarimas.map((t, idx) => newEscenario(t, idx + 1));
                 } else if (parsed.tarima && typeof parsed.tarima === "object") {
-                    importedTarimas = [newTarima(parsed.tarima, 1)];
+                    importedEscenarios = [newEscenario(parsed.tarima, 1)];
                 }
-                if (importedTarimas.length === 0) {
-                    importedTarimas = [newTarima({}, 1)];
+                if (importedEscenarios.length === 0) {
+                    importedEscenarios = [newEscenario({}, 1)];
                 }
 
+                pushHistorySnapshot();
                 model.sections = nextSections;
-                model.tarimas = importedTarimas;
-                model.selectedTarimaId = model.tarimas[0].id;
+                model.escenarios = importedEscenarios;
+                model.selectedEscenarioId = model.escenarios[0].id;
                 model.seatStyle.seatSize = Number.isFinite(Number(parsed?.meta?.seatSize))
                     ? Math.max(8, Math.min(40, Number(parsed.meta.seatSize)))
                     : 12;
@@ -817,15 +964,144 @@
             }
         }
 
+        // --- Menú contextual de secciones ---
+
+        function openSectionContextMenu(evt, sectionId) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            hideAllContextMenus();
+            const section = model.sections.find(s => s.id === sectionId);
+            if (!section) return;
+
+            document.getElementById("contextTitle").innerText = `Configurar: ${section.name}`;
+            document.getElementById("ctxName").value = section.name;
+            document.getElementById("ctxRows").value = section.rows;
+            document.getElementById("ctxCols").value = section.cols;
+            document.getElementById("ctxSeatSize").value = Number.isFinite(Number(section.seatSize)) ? Number(section.seatSize) : model.seatStyle.seatSize;
+            document.getElementById("ctxSeatGap").value = Number.isFinite(Number(section.seatGap)) ? Number(section.seatGap) : model.seatStyle.seatGap;
+            document.getElementById("ctxPrice").value = section.basePrice;
+            model.sectionContext.sectionId = section.id;
+
+            showContextPanel("sectionContextPanel", evt.clientX, evt.clientY);
+        }
+
+        function applySectionContext() {
+            const section = model.sections.find(s => s.id === model.sectionContext.sectionId);
+            if (!section) { hideAllContextMenus(); return; }
+
+            const newName = safeName(document.getElementById("ctxName").value);
+            const rows = parseInt(document.getElementById("ctxRows").value, 10);
+            const cols = parseInt(document.getElementById("ctxCols").value, 10);
+            const seatSize = parseInt(document.getElementById("ctxSeatSize").value, 10);
+            const seatGap = parseInt(document.getElementById("ctxSeatGap").value, 10);
+            const price = parseInt(document.getElementById("ctxPrice").value, 10);
+
+            if (!newName) { alert("Nombre inválido. Usa letras, números, _ o -."); return; }
+            if (newName !== section.name && model.sections.some(s => s.name === newName)) { alert("Ya existe otra sección con ese nombre."); return; }
+            if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 40 || cols > 40) { alert("Filas y columnas deben estar entre 1 y 40."); return; }
+            if (!Number.isInteger(seatSize) || seatSize < 8 || seatSize > 40) { alert("Tamaño de silla inválido (8-40)."); return; }
+            if (!Number.isInteger(seatGap) || seatGap < 0 || seatGap > 20) { alert("Separación inválida (0-20)."); return; }
+            if (!Number.isInteger(price) || price < 1000) { alert("Precio base inválido. Usa pesos >= 1000."); return; }
+
+            pushHistorySnapshot();
+            section.name = newName;
+            section.rows = rows;
+            section.cols = cols;
+            section.seatSize = seatSize;
+            section.seatGap = seatGap;
+            section.basePrice = price;
+            clampSection(section);
+            hideAllContextMenus();
+            renderStage();
+        }
+
+        function deleteSectionFromContext() {
+            const id = model.sectionContext.sectionId;
+            hideAllContextMenus();
+            if (id) removeSectionById(id);
+        }
+
+        // --- Menú contextual de escenarios ---
+
+        function openEscenarioContextMenu(evt, escId) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            hideAllContextMenus();
+            const esc = model.escenarios.find(t => t.id === escId);
+            if (!esc) return;
+
+            document.getElementById("escenarioContextTitle").innerText = `Configurar: ${esc.name}`;
+            document.getElementById("ctxEscName").value = esc.name;
+            document.getElementById("ctxEscWidth").value = Math.round(esc.width);
+            document.getElementById("ctxEscHeight").value = Math.round(esc.height);
+            model.escenarioContext.escenarioId = esc.id;
+
+            showContextPanel("escenarioContextPanel", evt.clientX, evt.clientY);
+        }
+
+        function applyEscenarioContext() {
+            const esc = model.escenarios.find(t => t.id === model.escenarioContext.escenarioId);
+            if (!esc) { hideAllContextMenus(); return; }
+
+            const newName = (document.getElementById("ctxEscName").value || "").trim();
+            const width = parseInt(document.getElementById("ctxEscWidth").value, 10);
+            const height = parseInt(document.getElementById("ctxEscHeight").value, 10);
+
+            if (!newName) { alert("Nombre inválido."); return; }
+            if (!Number.isInteger(width) || width < 80 || width > 900) { alert("Ancho inválido (80-900)."); return; }
+            if (!Number.isInteger(height) || height < 30 || height > 220) { alert("Alto inválido (30-220)."); return; }
+
+            pushHistorySnapshot();
+            esc.name = newName;
+            esc.width = width;
+            esc.height = height;
+            clampEscenario(esc);
+            hideAllContextMenus();
+            renderStage();
+        }
+
+        function deleteEscenarioFromContext() {
+            const id = model.escenarioContext.escenarioId;
+            hideAllContextMenus();
+            if (id) removeEscenarioById(id);
+        }
+
+        // --- Helpers de paneles contextuales ---
+
+        function showContextPanel(panelId, mouseX, mouseY) {
+            const panel = document.getElementById(panelId);
+            panel.style.display = "block";
+            const margin = 8;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const rect = panel.getBoundingClientRect();
+            let left = mouseX;
+            let top = mouseY;
+            if (left + rect.width + margin > vw) left = vw - rect.width - margin;
+            if (top + rect.height + margin > vh) top = vh - rect.height - margin;
+            panel.style.left = Math.max(margin, left) + "px";
+            panel.style.top = Math.max(margin, top) + "px";
+        }
+
+        function hideAllContextMenus() {
+            document.getElementById("sectionContextPanel").style.display = "none";
+            document.getElementById("escenarioContextPanel").style.display = "none";
+            model.sectionContext.sectionId = null;
+            model.escenarioContext.escenarioId = null;
+        }
+
+        // --- Drag & drop ---
+
         function startInteraction(evt, mode, targetId) {
+            if (evt.button !== 0) return;
             evt.preventDefault();
             evt.stopPropagation();
             const stage = document.getElementById("stage");
             const stageRect = stage.getBoundingClientRect();
 
-            if (mode.startsWith("tarima")) {
-                model.selectedTarimaId = targetId;
-                const t = model.tarimas.find(x => x.id === targetId);
+            if (mode.startsWith("esc-")) {
+                model.selectedEscenarioId = targetId;
+                const t = model.escenarios.find(x => x.id === targetId);
                 if (!t) return;
                 dragState = {
                     mode,
@@ -837,7 +1113,8 @@
                     startY: t.y,
                     startWidth: t.width,
                     startHeight: t.height,
-                    startRotation: t.rotation
+                    startRotation: t.rotation,
+                    historyPushed: false
                 };
                 const box = document.querySelector(`.platform-box[data-id="${targetId}"]`);
                 if (box) box.classList.add("dragging");
@@ -851,7 +1128,8 @@
                     startMouseX: evt.clientX,
                     startMouseY: evt.clientY,
                     startX: section.x,
-                    startY: section.y
+                    startY: section.y,
+                    historyPushed: false
                 };
                 const box = document.querySelector(`.section-box[data-id="${targetId}"]`);
                 if (box) box.classList.add("dragging");
@@ -863,24 +1141,28 @@
 
         function onDrag(evt) {
             if (!dragState) return;
-            if (dragState.mode.startsWith("tarima")) {
-                const tarima = model.tarimas.find(t => t.id === dragState.targetId);
-                if (!tarima) return;
+            if (!dragState.historyPushed) {
+                pushHistorySnapshot();
+                dragState.historyPushed = true;
+            }
+            if (dragState.mode.startsWith("esc-")) {
+                const esc = model.escenarios.find(t => t.id === dragState.targetId);
+                if (!esc) return;
 
-                if (dragState.mode === "tarima-move") {
-                    tarima.x = dragState.startX + (evt.clientX - dragState.startMouseX);
-                    tarima.y = dragState.startY + (evt.clientY - dragState.startMouseY);
-                    clampTarima(tarima);
-                } else if (dragState.mode === "tarima-resize") {
-                    tarima.width = Math.max(80, Math.min(900, dragState.startWidth + (evt.clientX - dragState.startMouseX)));
-                    tarima.height = Math.max(30, Math.min(220, dragState.startHeight + (evt.clientY - dragState.startMouseY)));
-                    clampTarima(tarima);
-                } else if (dragState.mode === "tarima-rotate") {
-                    const centerX = tarima.x + tarima.width / 2;
-                    const centerY = tarima.y + tarima.height / 2;
+                if (dragState.mode === "esc-move") {
+                    esc.x = dragState.startX + (evt.clientX - dragState.startMouseX);
+                    esc.y = dragState.startY + (evt.clientY - dragState.startMouseY);
+                    clampEscenario(esc);
+                } else if (dragState.mode === "esc-resize") {
+                    esc.width = Math.max(80, Math.min(900, dragState.startWidth + (evt.clientX - dragState.startMouseX)));
+                    esc.height = Math.max(30, Math.min(220, dragState.startHeight + (evt.clientY - dragState.startMouseY)));
+                    clampEscenario(esc);
+                } else if (dragState.mode === "esc-rotate") {
+                    const centerX = esc.x + esc.width / 2;
+                    const centerY = esc.y + esc.height / 2;
                     const dx = evt.clientX - (dragState.stageRect.left + centerX);
                     const dy = evt.clientY - (dragState.stageRect.top + centerY);
-                    tarima.rotation = normalizeAngle((Math.atan2(dy, dx) * 180 / Math.PI) + 90);
+                    esc.rotation = normalizeAngle((Math.atan2(dy, dx) * 180 / Math.PI) + 90);
                 }
             } else if (dragState.mode === "section-move") {
                 const section = model.sections.find(s => s.id === dragState.targetId);
@@ -901,21 +1183,63 @@
             renderSectionList();
         }
 
+        // --- Event listeners ---
+
         document.getElementById("btnAddSection").addEventListener("click", addSection);
-        document.getElementById("btnApplySeatStyle").addEventListener("click", applySeatStyle);
-        document.getElementById("btnUpdatePlatform").addEventListener("click", updateTarimaSize);
-        document.getElementById("btnAddPlatform").addEventListener("click", addPlatform);
-        document.getElementById("btnTogglePlatform").addEventListener("click", toggleSelectedPlatform);
-        document.getElementById("btnRemovePlatform").addEventListener("click", removeSelectedPlatform);
+        document.getElementById("btnAddPlatform").addEventListener("click", addEscenario);
+        document.getElementById("btnUndo").addEventListener("click", undo);
+        document.getElementById("btnRedo").addEventListener("click", redo);
         document.getElementById("btnAutoLayout").addEventListener("click", autoLayout);
         document.getElementById("btnClear").addEventListener("click", clearAll);
         document.getElementById("btnExportJson").addEventListener("click", exportJson);
         document.getElementById("btnImportJson").addEventListener("click", importJson);
         document.getElementById("btnCopyJson").addEventListener("click", copyJson);
+
+        document.getElementById("btnCtxCancel").addEventListener("click", hideAllContextMenus);
+        document.getElementById("btnCtxApply").addEventListener("click", applySectionContext);
+        document.getElementById("btnCtxDeleteSection").addEventListener("click", deleteSectionFromContext);
+
+        document.getElementById("btnCtxEscCancel").addEventListener("click", hideAllContextMenus);
+        document.getElementById("btnCtxEscApply").addEventListener("click", applyEscenarioContext);
+        document.getElementById("btnCtxDeleteEscenario").addEventListener("click", deleteEscenarioFromContext);
+
+        document.addEventListener("click", (evt) => {
+            const secPanel = document.getElementById("sectionContextPanel");
+            const escPanel = document.getElementById("escenarioContextPanel");
+            if (secPanel.style.display === "block" && !secPanel.contains(evt.target)) hideAllContextMenus();
+            if (escPanel.style.display === "block" && !escPanel.contains(evt.target)) hideAllContextMenus();
+        });
+        document.addEventListener("contextmenu", (evt) => {
+            if (evt.target.closest(".section-box") || evt.target.closest(".platform-box")) return;
+            hideAllContextMenus();
+        });
+        document.addEventListener("keydown", (evt) => {
+            const target = evt.target;
+            const isEditable = target && (
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable
+            );
+            if (isEditable) return;
+
+            const key = (evt.key || "").toLowerCase();
+            const hasMod = evt.ctrlKey || evt.metaKey;
+            const wantsUndo = hasMod && !evt.shiftKey && key === "z";
+            const wantsRedo = hasMod && ((evt.shiftKey && key === "z") || key === "y");
+
+            if (wantsUndo) {
+                evt.preventDefault();
+                undo();
+            } else if (wantsRedo) {
+                evt.preventDefault();
+                redo();
+            }
+        });
         window.addEventListener("resize", renderStage);
 
         refreshJsonOutput();
         renderStage();
+        updateHistoryButtons();
     </script>
 </body>
 </html>

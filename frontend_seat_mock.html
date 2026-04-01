@@ -415,7 +415,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_EVENT_ID = urlParams.get('eventId') || 1;
         const EVENT_ID = parseInt(CURRENT_EVENT_ID);
-        const API_BASE = "https://celticket-api.onrender.com";
+        const API_BASE = "http://localhost:8080";
         const WS_BASE = API_BASE;
         
         // --- SESIÓN DEL USUARIO ---
@@ -425,6 +425,8 @@
             MY_USER_ID = "sess_" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             localStorage.setItem("celticket_session_id", MY_USER_ID);
         }
+        const SESSION_TOKEN_KEY = "celticket_session_token";
+        let MY_AUTH_TOKEN = localStorage.getItem(SESSION_TOKEN_KEY) || "";
         
         let ws = null;
         let botWs = null;
@@ -437,11 +439,11 @@
 
         let ALL_EVENTS = [];
         let SECTION_PRICE_MAP = {};
-        let DEFAULT_SEAT_PRICE_CENTS = 20000;
+        let DEFAULT_SEAT_PRICE = 20000;
         let CURRENT_PROGRESS_PHASE = 'select';
 
-        function formatCop(cents) {
-            return '$' + Math.round((cents || 0) / 100).toLocaleString('es-CO');
+        function formatCop(pesos) {
+            return '$' + Math.round(pesos || 0).toLocaleString('es-CO');
         }
 
         function extractSectionFromSeatId(seatId) {
@@ -450,19 +452,19 @@
             return idx > 0 ? seatId.substring(0, idx) : '';
         }
 
-        function getSeatPriceCents(seatId) {
+        function getSeatPrice(seatId) {
             const section = extractSectionFromSeatId(seatId);
             if (section && Number.isFinite(SECTION_PRICE_MAP[section])) {
                 return SECTION_PRICE_MAP[section];
             }
-            return DEFAULT_SEAT_PRICE_CENTS;
+            return DEFAULT_SEAT_PRICE;
         }
 
         function refreshCheckoutSummary() {
             const mySeats = Array.from(document.querySelectorAll('.seat.locked-me')).map(el => el.dataset.id);
-            const subtotalCents = mySeats.reduce((acc, seatId) => acc + getSeatPriceCents(seatId), 0);
+            const subtotal = mySeats.reduce((acc, seatId) => acc + getSeatPrice(seatId), 0);
             const summaryEl = document.getElementById('checkoutSummary');
-            summaryEl.innerText = `Carrito: ${mySeats.length} sillas | Subtotal: ${formatCop(subtotalCents)}`;
+            summaryEl.innerText = `Carrito: ${mySeats.length} sillas | Subtotal: ${formatCop(subtotal)}`;
             const listEl = document.getElementById('checkoutSeatList');
             listEl.innerText = mySeats.length > 0 ? `Asientos: ${mySeats.join(', ')}` : 'Sin asientos seleccionados.';
             if (CURRENT_PROGRESS_PHASE !== 'pay') {
@@ -523,6 +525,35 @@
             } catch (_) {
                 return String(error);
             }
+        }
+
+        async function ensureGuestToken() {
+            if (MY_AUTH_TOKEN) return MY_AUTH_TOKEN;
+            const response = await fetch(`${API_BASE}/api/auth/guest-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: MY_USER_ID })
+            });
+            if (!response.ok) {
+                throw new Error(`No se pudo crear token de sesion (${response.status})`);
+            }
+            const data = await response.json();
+            if (!data.token) {
+                throw new Error('La API no devolvio token para sesion invitada.');
+            }
+            MY_AUTH_TOKEN = data.token;
+            localStorage.setItem(SESSION_TOKEN_KEY, MY_AUTH_TOKEN);
+            return MY_AUTH_TOKEN;
+        }
+
+        function buildAuthHeaders(baseHeaders = {}) {
+            const headers = {
+                ...baseHeaders
+            };
+            if (MY_AUTH_TOKEN) {
+                headers['Authorization'] = `Bearer ${MY_AUTH_TOKEN}`;
+            }
+            return headers;
         }
 
         function setCheckoutButtons(disabled, text) {
@@ -591,10 +622,11 @@
                     const url = new URL(sessionData.redirectUrl);
                     url.searchParams.set('reference', sessionData.reference);
                     url.searchParams.set('eventId', String(EVENT_ID));
+                    url.searchParams.set('sessionId', MY_USER_ID);
                     return url.toString();
                 } catch (_) {
                     const sep = sessionData.redirectUrl.includes('?') ? '&' : '?';
-                    return `${sessionData.redirectUrl}${sep}reference=${encodeURIComponent(sessionData.reference)}&eventId=${encodeURIComponent(String(EVENT_ID))}`;
+                    return `${sessionData.redirectUrl}${sep}reference=${encodeURIComponent(sessionData.reference)}&eventId=${encodeURIComponent(String(EVENT_ID))}&sessionId=${encodeURIComponent(MY_USER_ID)}`;
                 }
             })();
             const checkout = new WidgetCheckout({
@@ -682,7 +714,7 @@
                         : event.layoutConfig;
                     if (layoutObj?.sections && Array.isArray(layoutObj.sections)) {
                         layoutObj.sections.forEach((section) => {
-                            const price = Number(section.basePriceCents);
+                            const price = Number(section.basePrice);
                             if (section.name && Number.isFinite(price) && price > 0) {
                                 SECTION_PRICE_MAP[section.name] = Math.round(price);
                             }
@@ -714,14 +746,9 @@
             const map = document.getElementById('seatMap');
             map.innerHTML = '';
             map.classList.add('pro-layout');
-            const metaSeatSize = Number(layout?.meta?.seatSize);
-            const metaSeatGap = Number(layout?.meta?.seatGap);
-            const PRO_SEAT_SIZE = (Number.isFinite(metaSeatSize) && metaSeatSize >= 8 && metaSeatSize <= 40)
-                ? metaSeatSize
-                : 12;
-            const PRO_SEAT_GAP = (Number.isFinite(metaSeatGap) && metaSeatGap >= 0 && metaSeatGap <= 20)
-                ? metaSeatGap
-                : 4;
+            // El tamaño y gap deben venir por sección. Meta se ignora para evitar inconsistencias.
+            const DEFAULT_SECTION_SEAT_SIZE = 12;
+            const DEFAULT_SECTION_SEAT_GAP = 4;
             const PRO_SECTION_PADDING = 8;
             const PRO_TITLE_HEIGHT = 28;
 
@@ -739,6 +766,8 @@
                 .map((section, idx) => {
                     const rows = parseInt(section.rows, 10);
                     const cols = parseInt(section.cols, 10);
+                    const sectionSeatSize = Number(section.seatSize);
+                    const sectionSeatGap = Number(section.seatGap);
                     if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1) {
                         return null;
                     }
@@ -749,7 +778,13 @@
                         cols,
                         name: section.name || `SECCION_${idx + 1}`,
                         x: Number(section.x),
-                        y: Number(section.y)
+                        y: Number(section.y),
+                        seatSize: (Number.isFinite(sectionSeatSize) && sectionSeatSize >= 8 && sectionSeatSize <= 40)
+                            ? sectionSeatSize
+                            : DEFAULT_SECTION_SEAT_SIZE,
+                        seatGap: (Number.isFinite(sectionSeatGap) && sectionSeatGap >= 0 && sectionSeatGap <= 20)
+                            ? sectionSeatGap
+                            : DEFAULT_SECTION_SEAT_GAP
                     };
                 })
                 .filter(Boolean);
@@ -820,18 +855,18 @@
 
                 const gridDiv = document.createElement('div');
                 gridDiv.className = 'pro-section-grid';
-                gridDiv.style.gridTemplateColumns = `repeat(${section.cols}, ${PRO_SEAT_SIZE}px)`;
-                gridDiv.style.gap = `${PRO_SEAT_GAP}px`;
+                gridDiv.style.gridTemplateColumns = `repeat(${section.cols}, ${section.seatSize}px)`;
+                gridDiv.style.gap = `${section.seatGap}px`;
 
                 for (let r = 0; r < section.rows; r++) {
                     const rowLabel = String.fromCharCode(65 + r);
                     for (let c = 1; c <= section.cols; c++) {
                         const seatId = `${section.name}-${rowLabel}${c}`;
                         const seat = createSeatElement(seatId, `${rowLabel}${c}`);
-                        seat.style.width = `${PRO_SEAT_SIZE}px`;
-                        seat.style.height = `${PRO_SEAT_SIZE}px`;
-                        seat.style.borderRadius = `${Math.max(2, Math.round(PRO_SEAT_SIZE * 0.25))}px`;
-                        seat.style.fontSize = `${Math.max(7, Math.min(12, Math.round(PRO_SEAT_SIZE * 0.55)))}px`;
+                        seat.style.width = `${section.seatSize}px`;
+                        seat.style.height = `${section.seatSize}px`;
+                        seat.style.borderRadius = `${Math.max(2, Math.round(section.seatSize * 0.25))}px`;
+                        seat.style.fontSize = `${Math.max(7, Math.min(12, Math.round(section.seatSize * 0.55)))}px`;
                         seat.style.boxShadow = 'none';
                         gridDiv.appendChild(seat);
                     }
@@ -841,8 +876,8 @@
 
                 // Compatibilidad con layout builder: si trae x,y, los usamos.
                 // Si no trae posiciones, hacemos autolayout para que el mapa siga siendo legible.
-                const estimatedWidth = (section.cols * PRO_SEAT_SIZE) + ((section.cols - 1) * PRO_SEAT_GAP) + (PRO_SECTION_PADDING * 2);
-                const estimatedHeight = (section.rows * PRO_SEAT_SIZE) + ((section.rows - 1) * PRO_SEAT_GAP) + (PRO_SECTION_PADDING * 2) + PRO_TITLE_HEIGHT;
+                const estimatedWidth = (section.cols * section.seatSize) + ((section.cols - 1) * section.seatGap) + (PRO_SECTION_PADDING * 2);
+                const estimatedHeight = (section.rows * section.seatSize) + ((section.rows - 1) * section.seatGap) + (PRO_SECTION_PADDING * 2) + PRO_TITLE_HEIGHT;
                 const hasPos = Number.isFinite(section.x) && Number.isFinite(section.y);
                 sectionDiv.style.width = `${estimatedWidth}px`;
                 sectionDiv.style.height = `${estimatedHeight}px`;
@@ -1077,9 +1112,10 @@
             updateCheckoutProgress('pay');
 
             try {
+                await ensureGuestToken();
                 const response = await fetch(`${API_BASE}/api/payments/wompi/checkout-session`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
                         eventId: EVENT_ID,
                         seatIds: mySeats,
@@ -1091,8 +1127,8 @@
                 if (response.ok) {
                     const session = await response.json();
                     const totalsEl = document.getElementById('checkoutTotals');
-                    const subtotal = session.subtotalCents || 0;
-                    const fee = session.serviceFeeCents || 0;
+                    const subtotal = session.subtotal || 0;
+                    const fee = session.serviceFee || 0;
                     const total = session.amountInCents || 0;
                     totalsEl.innerText = `Subtotal: ${formatCop(subtotal)} | Fee: ${formatCop(fee)} | Total: ${formatCop(total)} | Ref: ${session.reference}`;
                     log(`[SISTEMA] Sesión Wompi creada. Ref: ${session.reference}`, 'log-sys');

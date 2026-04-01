@@ -10,6 +10,7 @@ import com.celticket.backend.service.SeatLockService;
 import com.celticket.backend.service.WompiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,19 +58,20 @@ public class WompiPaymentController {
     }
 
     @PostMapping("/checkout-session")
-    public ResponseEntity<?> createCheckoutSession(@RequestBody CheckoutRequest request) {
+    public ResponseEntity<?> createCheckoutSession(@RequestBody CheckoutRequest request, Authentication authentication) {
         if (request.getEventId() == null || request.getSeatIds() == null || request.getSeatIds().isEmpty()
                 || request.getSessionId() == null || request.getSessionId().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("mensaje", "Faltan datos para iniciar el checkout."));
         }
 
         try {
+            enforceSessionOwnership(request, authentication);
             seatLockService.validateSeatOwnership(request.getEventId(), request.getSeatIds(), request.getSessionId());
             CheckoutQuoteResponse quote = seatPricingService.quote(request.getEventId(), request.getSeatIds());
             PaymentOrder order = paymentOrderService.createPendingWompiOrder(request, quote);
             WompiCheckoutSessionResponse session = wompiService.buildCheckoutSession(order);
-            session.setSubtotalCents(quote.getSubtotalCents());
-            session.setServiceFeeCents(quote.getServiceFeeCents());
+            session.setSubtotal(quote.getSubtotal());
+            session.setServiceFee(quote.getServiceFee());
             session.setItems(quote.getItems());
             return ResponseEntity.ok(session);
         } catch (IllegalStateException e) {
@@ -81,12 +83,15 @@ public class WompiPaymentController {
     }
 
     @GetMapping("/orders/{reference}")
-    public ResponseEntity<?> getOrder(@PathVariable String reference) {
+    public ResponseEntity<?> getOrder(@PathVariable String reference, Authentication authentication) {
         Optional<PaymentOrder> maybeOrder = paymentOrderService.findByReference(reference);
         if (maybeOrder.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         PaymentOrder order = maybeOrder.get();
+        if (!isOwner(authentication, order)) {
+            return ResponseEntity.status(403).body(Map.of("mensaje", "No autorizado para consultar esta orden."));
+        }
         Map<String, Object> response = new HashMap<>();
         response.put("reference", order.getReference());
         response.put("status", order.getStatus());
@@ -94,9 +99,9 @@ public class WompiPaymentController {
         List<String> seatIds = paymentOrderService.readSeatIds(order);
         response.put("seatIds", seatIds);
         response.put("seatCount", seatIds.size());
-        response.put("subtotalCents", order.getSubtotalCents());
-        response.put("serviceFeeCents", order.getServiceFeeCents());
-        response.put("amountInCents", order.getAmountInCents());
+        response.put("subtotal", order.getSubtotal());
+        response.put("serviceFee", order.getServiceFee());
+        response.put("amount", order.getAmount());
         response.put("currency", order.getCurrency());
         return ResponseEntity.ok(response);
     }
@@ -164,5 +169,39 @@ public class WompiPaymentController {
         if (value == null) return null;
         String str = String.valueOf(value);
         return str.isBlank() ? null : str;
+    }
+
+    private void enforceSessionOwnership(CheckoutRequest request, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return;
+        }
+        String principal = authentication.getName();
+        if (!principal.startsWith("session:")) {
+            return;
+        }
+
+        String sessionId = principal.substring("session:".length());
+        if (request.getSessionId() == null || request.getSessionId().isBlank()) {
+            request.setSessionId(sessionId);
+            return;
+        }
+        if (!sessionId.equals(request.getSessionId())) {
+            throw new IllegalStateException("La session autenticada no coincide con la session del request.");
+        }
+    }
+
+    private boolean isOwner(Authentication authentication, PaymentOrder order) {
+        if (authentication == null || authentication.getName() == null) {
+            return false;
+        }
+        String principal = authentication.getName();
+        if (principal.startsWith("session:")) {
+            String sessionId = principal.substring("session:".length());
+            return sessionId.equals(order.getSessionId());
+        }
+        if (order.getBuyerEmail() == null || order.getBuyerEmail().isBlank()) {
+            return false;
+        }
+        return principal.equalsIgnoreCase(order.getBuyerEmail());
     }
 }

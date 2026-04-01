@@ -16,11 +16,11 @@ public class SeatPricingService {
     private final EventRepository eventRepository;
     private final ObjectMapper objectMapper;
 
-    @Value("${payments.default-seat-price-cents:20000}")
-    private Integer defaultSeatPriceCents;
+    @Value("${payments.default-seat-price:20000}")
+    private Integer defaultSeatPrice;
 
-    @Value("${payments.service-fee-cents:0}")
-    private Integer serviceFeeCents;
+    @Value("${payments.service-fee:0}")
+    private Integer serviceFee;
 
     @Value("${wompi.currency:COP}")
     private String currency;
@@ -52,9 +52,9 @@ public class SeatPricingService {
 
         CheckoutQuoteResponse response = new CheckoutQuoteResponse();
         response.setCurrency(currency);
-        response.setSubtotalCents(subtotal);
-        response.setServiceFeeCents(fee);
-        response.setTotalCents(subtotal + fee);
+        response.setSubtotal(subtotal);
+        response.setServiceFee(fee);
+        response.setTotal(subtotal + fee);
         response.setItems(items);
         return response;
     }
@@ -73,13 +73,12 @@ public class SeatPricingService {
             }
             for (JsonNode section : sections) {
                 String name = section.path("name").asText(null);
-                Integer price = section.has("basePriceCents") ? section.path("basePriceCents").asInt(defaultPrice) : defaultPrice;
+                Integer price = section.has("basePrice") ? section.path("basePrice").asInt(defaultPrice) : defaultPrice;
                 if (name != null && !name.isBlank()) {
                     sectionPrices.put(name, price);
                 }
             }
         } catch (Exception ignored) {
-            // Si no se puede parsear, se usa precio por defecto.
         }
         return sectionPrices;
     }
@@ -96,13 +95,13 @@ public class SeatPricingService {
     }
 
     private int safeDefaultSeatPrice() {
-        if (defaultSeatPriceCents == null) return 20000;
-        return defaultSeatPriceCents > 0 ? defaultSeatPriceCents : 20000;
+        if (defaultSeatPrice == null) return 20000;
+        return defaultSeatPrice > 0 ? defaultSeatPrice : 20000;
     }
 
     private int safeServiceFee() {
-        if (serviceFeeCents == null) return 0;
-        int fee = serviceFeeCents;
+        if (serviceFee == null) return 0;
+        int fee = serviceFee;
         return Math.max(fee, 0);
     }
 }

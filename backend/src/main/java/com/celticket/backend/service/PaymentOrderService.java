@@ -32,9 +32,9 @@ public class PaymentOrderService {
         order.setEventId(request.getEventId());
         order.setSessionId(request.getSessionId());
         order.setBuyerEmail(request.getBuyerEmail());
-        order.setAmountInCents(quote.getTotalCents());
-        order.setSubtotalCents(quote.getSubtotalCents());
-        order.setServiceFeeCents(quote.getServiceFeeCents());
+        order.setAmount(quote.getTotal());
+        order.setSubtotal(quote.getSubtotal());
+        order.setServiceFee(quote.getServiceFee());
         order.setCurrency(quote.getCurrency());
         order.setStatus("PENDING");
         order.setSeatIdsJson(writeSeatIds(request.getSeatIds()));

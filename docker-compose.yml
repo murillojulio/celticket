@@ -1,18 +1,21 @@
-version: '3.8'
-
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: celticket-mysql
+  postgres:
+    image: postgres:16
+    container_name: celticket-postgres
     environment:
-      MYSQL_DATABASE: celticket
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      POSTGRES_DB: celticket
+      POSTGRES_USER: celticket
+      POSTGRES_PASSWORD: celticket
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U celticket -d celticket"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:alpine
@@ -22,7 +25,34 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celticket-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/celticket
+      SPRING_DATASOURCE_USERNAME: celticket
+      SPRING_DATASOURCE_PASSWORD: celticket
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ""
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
 
 volumes:
-  mysql-data:
+  postgres-data:
   redis-data:

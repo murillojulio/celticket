@@ -32,9 +32,10 @@ public class WompiService {
     private String wompiRedirectUrl;
 
     public WompiCheckoutSessionResponse buildCheckoutSession(PaymentOrder order) {
+        int amountInCents = order.getAmount() * 100;
         WompiCheckoutSessionResponse response = new WompiCheckoutSessionResponse();
         response.setReference(order.getReference());
-        response.setAmountInCents(order.getAmountInCents());
+        response.setAmountInCents(amountInCents);
         response.setCurrency(order.getCurrency());
         response.setPublicKey(wompiPublicKey);
         response.setRedirectUrl(wompiRedirectUrl);
@@ -42,7 +43,7 @@ public class WompiService {
         response.setStatus(order.getStatus());
         response.setIntegritySignature(calculateIntegritySignature(
                 order.getReference(),
-                order.getAmountInCents(),
+                amountInCents,
                 order.getCurrency()
         ));
         return response;

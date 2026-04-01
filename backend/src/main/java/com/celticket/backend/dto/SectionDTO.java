@@ -12,7 +12,9 @@ public class SectionDTO {
     private int cols;
     private Double x;
     private Double y;
-    private Integer basePriceCents;
+    private Integer basePrice;
+    private Integer seatSize;
+    private Integer seatGap;
     private List<Map<String, Object>> seats;
 
     public SectionDTO() {}
@@ -29,8 +31,12 @@ public class SectionDTO {
     public void setX(Double x) { this.x = x; }
     public Double getY() { return y; }
     public void setY(Double y) { this.y = y; }
-    public Integer getBasePriceCents() { return basePriceCents; }
-    public void setBasePriceCents(Integer basePriceCents) { this.basePriceCents = basePriceCents; }
+    public Integer getBasePrice() { return basePrice; }
+    public void setBasePrice(Integer basePrice) { this.basePrice = basePrice; }
+    public Integer getSeatSize() { return seatSize; }
+    public void setSeatSize(Integer seatSize) { this.seatSize = seatSize; }
+    public Integer getSeatGap() { return seatGap; }
+    public void setSeatGap(Integer seatGap) { this.seatGap = seatGap; }
     public List<Map<String, Object>> getSeats() { return seats; }
     public void setSeats(List<Map<String, Object>> seats) { this.seats = seats; }
 }

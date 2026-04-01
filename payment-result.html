@@ -153,6 +153,46 @@
         let currentSeatIds = [];
         const TERMINAL_STATES = new Set(["APPROVED", "DECLINED", "VOIDED", "ERROR"]);
 
+        function resolveSessionId() {
+            const p = new URLSearchParams(window.location.search);
+            const fromUrl = p.get("sessionId");
+            if (fromUrl && fromUrl.trim()) {
+                localStorage.setItem("celticket_session_id", fromUrl.trim());
+                return fromUrl.trim();
+            }
+            let fromStorage = localStorage.getItem("celticket_session_id");
+            if (!fromStorage) {
+                fromStorage = "sess_" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                localStorage.setItem("celticket_session_id", fromStorage);
+            }
+            return fromStorage;
+        }
+
+        const SESSION_ID = resolveSessionId();
+        const SESSION_TOKEN_KEY = "celticket_session_token";
+        let SESSION_TOKEN = localStorage.getItem(SESSION_TOKEN_KEY) || "";
+
+        async function ensureGuestToken() {
+            if (SESSION_TOKEN) return SESSION_TOKEN;
+            const res = await fetch(`${API_BASE}/api/auth/guest-session`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ sessionId: SESSION_ID })
+            });
+            if (!res.ok) {
+                throw new Error(`No se pudo crear token de sesion (${res.status}).`);
+            }
+            const data = await res.json();
+            if (!data.token) {
+                throw new Error("No se recibio token de sesion.");
+            }
+            SESSION_TOKEN = data.token;
+            localStorage.setItem(SESSION_TOKEN_KEY, SESSION_TOKEN);
+            return SESSION_TOKEN;
+        }
+
         function getRefFromUrl() {
             const p = new URLSearchParams(window.location.search);
             return p.get("reference") || p.get("ref") || "";
@@ -188,9 +228,17 @@
         }
 
         async function fetchOrder(reference) {
-            const res = await fetch(`${API_BASE}/api/payments/wompi/orders/${encodeURIComponent(reference)}`);
+            await ensureGuestToken();
+            const res = await fetch(`${API_BASE}/api/payments/wompi/orders/${encodeURIComponent(reference)}`, {
+                headers: {
+                    "Authorization": `Bearer ${SESSION_TOKEN}`
+                }
+            });
             if (res.status === 404) {
                 throw new Error("No se encontró una orden con esa referencia.");
+            }
+            if (res.status === 403) {
+                throw new Error("No autorizado para consultar esta orden con tu sesión actual.");
             }
             if (!res.ok) {
                 throw new Error(`Error consultando orden (${res.status}).`);

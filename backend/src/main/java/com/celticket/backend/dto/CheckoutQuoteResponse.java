@@ -4,40 +4,40 @@ import java.util.List;
 
 public class CheckoutQuoteResponse {
     private String currency;
-    private Integer subtotalCents;
-    private Integer serviceFeeCents;
-    private Integer totalCents;
+    private Integer subtotal;
+    private Integer serviceFee;
+    private Integer total;
     private List<SeatPriceItem> items;
 
     public static class SeatPriceItem {
         private String seatId;
         private String section;
-        private Integer unitPriceCents;
+        private Integer unitPrice;
 
         public SeatPriceItem() {}
 
-        public SeatPriceItem(String seatId, String section, Integer unitPriceCents) {
+        public SeatPriceItem(String seatId, String section, Integer unitPrice) {
             this.seatId = seatId;
             this.section = section;
-            this.unitPriceCents = unitPriceCents;
+            this.unitPrice = unitPrice;
         }
 
         public String getSeatId() { return seatId; }
         public void setSeatId(String seatId) { this.seatId = seatId; }
         public String getSection() { return section; }
         public void setSection(String section) { this.section = section; }
-        public Integer getUnitPriceCents() { return unitPriceCents; }
-        public void setUnitPriceCents(Integer unitPriceCents) { this.unitPriceCents = unitPriceCents; }
+        public Integer getUnitPrice() { return unitPrice; }
+        public void setUnitPrice(Integer unitPrice) { this.unitPrice = unitPrice; }
     }
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
-    public Integer getSubtotalCents() { return subtotalCents; }
-    public void setSubtotalCents(Integer subtotalCents) { this.subtotalCents = subtotalCents; }
-    public Integer getServiceFeeCents() { return serviceFeeCents; }
-    public void setServiceFeeCents(Integer serviceFeeCents) { this.serviceFeeCents = serviceFeeCents; }
-    public Integer getTotalCents() { return totalCents; }
-    public void setTotalCents(Integer totalCents) { this.totalCents = totalCents; }
+    public Integer getSubtotal() { return subtotal; }
+    public void setSubtotal(Integer subtotal) { this.subtotal = subtotal; }
+    public Integer getServiceFee() { return serviceFee; }
+    public void setServiceFee(Integer serviceFee) { this.serviceFee = serviceFee; }
+    public Integer getTotal() { return total; }
+    public void setTotal(Integer total) { this.total = total; }
     public List<SeatPriceItem> getItems() { return items; }
     public void setItems(List<SeatPriceItem> items) { this.items = items; }
 }

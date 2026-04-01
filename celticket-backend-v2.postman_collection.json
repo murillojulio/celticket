@@ -1,0 +1,334 @@
+{
+  "info": {
+    "name": "Celticket Backend API v2 (Sesion firmada)",
+    "_postman_id": "dcba7e14-c40f-45fe-88d6-f44ea91961cd",
+    "description": "Coleccion fase 3: autenticacion HTTP solo por Bearer token (sesion invitada firmada).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/guest-session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body && body.token) {",
+                  "  pm.collectionVariables.set('jwtToken', body.token);",
+                  "}",
+                  "if (body && body.sessionId) {",
+                  "  pm.collectionVariables.set('sessionId', body.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/guest-session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "guest-session"
+              ]
+            },
+            "description": "Emite token firmado para sesion de invitado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "GET /api/events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/events/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/events/{id}/seats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/seats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "seats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT /api/events/{id}/layout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meta\": {\n    \"seatSize\": 12,\n    \"seatGap\": 4\n  },\n  \"sections\": [\n    {\n      \"name\": \"PLATEA\",\n      \"rows\": 4,\n      \"cols\": 6,\n      \"basePriceCents\": 40000,\n      \"x\": 40,\n      \"y\": 110\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/layout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "layout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST /api/checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wompi Payments",
+      "item": [
+        {
+          "name": "POST /api/payments/wompi/quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "quote"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/payments/wompi/checkout-session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/checkout-session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "checkout-session"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/payments/wompi/orders/{reference}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/orders/{{reference}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "orders",
+                "{{reference}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/payments/wompi/webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"transaction.updated\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": \"{{transactionId}}\",\n      \"status\": \"APPROVED\",\n      \"reference\": \"{{reference}}\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "webhook"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "eventId",
+      "value": "1"
+    },
+    {
+      "key": "sessionId",
+      "value": "sess_demo_123456"
+    },
+    {
+      "key": "jwtToken",
+      "value": ""
+    },
+    {
+      "key": "reference",
+      "value": "CELT-1-XXXXXXXXXX"
+    },
+    {
+      "key": "transactionId",
+      "value": "tx_demo_123"
+    }
+  ]
+}

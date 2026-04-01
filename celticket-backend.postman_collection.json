@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "Celticket Backend API",
+    "_postman_id": "f5f0e3f6-5d45-4b0a-9d84-8dd9f8f0f3b1",
+    "description": "Coleccion para probar todos los endpoints HTTP actuales del backend Celticket.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "GET /api/events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ]
+            },
+            "description": "Lista todos los eventos."
+          }
+        },
+        {
+          "name": "GET /api/events/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}"
+              ]
+            },
+            "description": "Obtiene un evento por ID."
+          }
+        },
+        {
+          "name": "GET /api/events/{id}/seats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/seats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "seats"
+              ]
+            },
+            "description": "Lista asientos del evento."
+          }
+        },
+        {
+          "name": "PUT /api/events/{id}/layout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Session-Id",
+                "value": "{{sessionId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meta\": {\n    \"seatSize\": 12,\n    \"seatGap\": 4\n  },\n  \"sections\": [\n    {\n      \"name\": \"PLATEA\",\n      \"rows\": 4,\n      \"cols\": 6,\n      \"basePriceCents\": 40000,\n      \"x\": 40,\n      \"y\": 110\n    },\n    {\n      \"name\": \"GENERAL\",\n      \"rows\": 5,\n      \"cols\": 8,\n      \"basePriceCents\": 20000,\n      \"x\": 350,\n      \"y\": 110\n    }\n  ],\n  \"tarimas\": [\n    {\n      \"name\": \"ESCENARIO\",\n      \"width\": 260,\n      \"height\": 40,\n      \"x\": 220,\n      \"y\": 30,\n      \"rotation\": 0,\n      \"enabled\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/layout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "layout"
+              ]
+            },
+            "description": "Actualiza layout del evento (ruta protegida)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST /api/checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Session-Id",
+                "value": "{{sessionId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\", \"PLATEA-A2\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            },
+            "description": "Confirma compra directa de asientos bloqueados."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wompi Payments",
+      "item": [
+        {
+          "name": "POST /api/payments/wompi/quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Session-Id",
+                "value": "{{sessionId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\", \"PLATEA-A2\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "quote"
+              ]
+            },
+            "description": "Cotiza subtotal/fee/total para asientos."
+          }
+        },
+        {
+          "name": "POST /api/payments/wompi/checkout-session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Session-Id",
+                "value": "{{sessionId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatIds\": [\"PLATEA-A1\", \"PLATEA-A2\"],\n  \"sessionId\": \"{{sessionId}}\",\n  \"buyerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/checkout-session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "checkout-session"
+              ]
+            },
+            "description": "Crea sesion de pago Wompi."
+          }
+        },
+        {
+          "name": "GET /api/payments/wompi/orders/{reference}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Session-Id",
+                "value": "{{sessionId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/orders/{{reference}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "orders",
+                "{{reference}}"
+              ]
+            },
+            "description": "Consulta una orden por referencia (requiere ser owner)."
+          }
+        },
+        {
+          "name": "POST /api/payments/wompi/webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"transaction.updated\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": \"{{transactionId}}\",\n      \"status\": \"APPROVED\",\n      \"reference\": \"{{reference}}\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wompi/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "wompi",
+                "webhook"
+              ]
+            },
+            "description": "Endpoint tecnico de webhook Wompi."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "eventId",
+      "value": "1"
+    },
+    {
+      "key": "sessionId",
+      "value": "sess_demo_123456"
+    },
+    {
+      "key": "reference",
+      "value": "CELT-1-XXXXXXXXXX"
+    },
+    {
+      "key": "transactionId",
+      "value": "tx_demo_123"
+    },
+    {
+      "key": "jwtToken",
+      "value": ""
+    }
+  ]
+}

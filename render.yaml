@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: celticket-backend
+    runtime: docker
+    plan: free
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/events
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: celticket-postgres
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: celticket-postgres
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: celticket-postgres
+          property: password
+      - key: SPRING_DATA_REDIS_HOST
+        fromService:
+          type: keyvalue
+          name: celticket-redis
+          property: host
+      - key: SPRING_DATA_REDIS_PORT
+        fromService:
+          type: keyvalue
+          name: celticket-redis
+          property: port
+      - key: SPRING_DATA_REDIS_PASSWORD
+        fromService:
+          type: keyvalue
+          name: celticket-redis
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WOMPI_PUBLIC_KEY
+        sync: false
+      - key: WOMPI_PRIVATE_KEY
+        sync: false
+      - key: WOMPI_INTEGRITY_SECRET
+        sync: false
+      - key: WOMPI_REDIRECT_URL
+        sync: false
+
+  - type: keyvalue
+    name: celticket-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: celticket-postgres
+    databaseName: celticket
+    user: celticket
+    plan: free

@@ -33,13 +33,13 @@ public class PaymentOrder {
     private String buyerEmail;
 
     @Column(nullable = false)
-    private Integer amountInCents;
+    private Integer amount;
 
     @Column(nullable = false)
-    private Integer subtotalCents;
+    private Integer subtotal;
 
     @Column(nullable = false)
-    private Integer serviceFeeCents;
+    private Integer serviceFee;
 
     @Column(nullable = false, length = 10)
     private String currency;
@@ -84,12 +84,12 @@ public class PaymentOrder {
     public void setSessionId(String sessionId) { this.sessionId = sessionId; }
     public String getBuyerEmail() { return buyerEmail; }
     public void setBuyerEmail(String buyerEmail) { this.buyerEmail = buyerEmail; }
-    public Integer getAmountInCents() { return amountInCents; }
-    public void setAmountInCents(Integer amountInCents) { this.amountInCents = amountInCents; }
-    public Integer getSubtotalCents() { return subtotalCents; }
-    public void setSubtotalCents(Integer subtotalCents) { this.subtotalCents = subtotalCents; }
-    public Integer getServiceFeeCents() { return serviceFeeCents; }
-    public void setServiceFeeCents(Integer serviceFeeCents) { this.serviceFeeCents = serviceFeeCents; }
+    public Integer getAmount() { return amount; }
+    public void setAmount(Integer amount) { this.amount = amount; }
+    public Integer getSubtotal() { return subtotal; }
+    public void setSubtotal(Integer subtotal) { this.subtotal = subtotal; }
+    public Integer getServiceFee() { return serviceFee; }
+    public void setServiceFee(Integer serviceFee) { this.serviceFee = serviceFee; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public String getStatus() { return status; }
