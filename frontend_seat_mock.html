@@ -415,7 +415,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_EVENT_ID = urlParams.get('eventId') || 1;
         const EVENT_ID = parseInt(CURRENT_EVENT_ID);
-        const API_BASE = "http://localhost:8080";
+        /** Origen del API/WS. ?apiBase=https://tu-backend.com fuerza URL (útil en previews). */
+        function resolveApiBase() {
+            const q = new URLSearchParams(window.location.search).get('apiBase');
+            if (q) return q.replace(/\/$/, '');
+            const h = location.hostname;
+            if (h.endsWith('.vercel.app')) {
+                return 'https://jainnovatedev.uk';
+            }
+            return 'http://localhost:8080';
+        }
+        const API_BASE = resolveApiBase();
         const WS_BASE = API_BASE;
         /** Opciones SockJS (transports explícitos; combinar con setSessionCookieNeeded(false) en el backend). */
         const SOCKJS_OPTIONS = { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] };
