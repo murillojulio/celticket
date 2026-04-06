@@ -37,6 +37,8 @@ services:
           property: password
       - key: JWT_SECRET
         generateValue: true
+      - key: ADMIN_PASSWORD
+        generateValue: true
       - key: WOMPI_PUBLIC_KEY
         sync: false
       - key: WOMPI_PRIVATE_KEY

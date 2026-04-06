@@ -4,6 +4,9 @@
     { "source": "/", "destination": "/frontend_seat_mock.html" },
     { "source": "/payment-result", "destination": "/payment-result.html" },
     { "source": "/layout-builder", "destination": "/layout_builder.html" },
-    { "source": "/frontend", "destination": "/frontend/index.html" }
+    { "source": "/frontend", "destination": "/frontend/index.html" },
+    { "source": "/admin/assets/:path*", "destination": "/admin-dist/assets/:path*" },
+    { "source": "/admin", "destination": "/admin-dist/index.html" },
+    { "source": "/admin/:path*", "destination": "/admin-dist/index.html" }
   ]
 }

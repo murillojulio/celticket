@@ -14,6 +14,9 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    /** Subject claim for JWTs issued by POST /api/auth/admin-login */
+    public static final String ADMIN_SUBJECT = "admin:celticket";
+
     @Value("${jwt.secret}")
     private String secretKey;
 

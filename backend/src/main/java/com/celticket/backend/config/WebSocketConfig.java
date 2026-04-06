@@ -43,8 +43,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/seats-ws")
-                .setAllowedOriginPatterns("*") 
-                .withSockJS();
+                .setAllowedOriginPatterns("*")
+                .withSockJS()
+                // Evita cookie JSESSIONID en SockJS; sin esto el navegador manda credenciales en el
+                // XHR a /seats-ws/info y CORS exige Access-Control-Allow-Credentials: true (incompatible con *).
+                .setSessionCookieNeeded(false);
     }
 
     @Override

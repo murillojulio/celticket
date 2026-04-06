@@ -8,7 +8,7 @@
             "mainClass": "com.celticket.backend.BackendApplication",
             "projectName": "backend",
             "cwd": "${workspaceFolder}/backend",
-            "preLaunchTask": "Infra: levantar MySQL y Redis"
+            "preLaunchTask": "Infra: levantar PostgreSQL y Redis"
         }
     ]
 }

@@ -23,6 +23,25 @@ public class EventService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Crea asientos en rejilla simple (fila A-Z, columnas 1..n) como en {@link com.celticket.backend.config.DataInitializer}.
+     */
+    public void seedGridSeats(Event event) {
+        if (event.getRowCount() == null || event.getColumnCount() == null
+                || event.getRowCount() <= 0 || event.getColumnCount() <= 0) {
+            return;
+        }
+        for (int r = 0; r < event.getRowCount(); r++) {
+            char rowChar = (char) ('A' + r);
+            for (int c = 1; c <= event.getColumnCount(); c++) {
+                String seatCode = rowChar + String.valueOf(c);
+                jdbcTemplate.update(
+                        "INSERT INTO seats (seat_code, status, event_id) VALUES (?, ?, ?)",
+                        seatCode, "AVAILABLE", event.getId());
+            }
+        }
+    }
+
     public void updateEventLayout(Long eventId, LayoutDTO layoutDTO) throws JsonProcessingException {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado: " + eventId));

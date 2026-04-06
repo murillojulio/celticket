@@ -417,6 +417,15 @@
         const EVENT_ID = parseInt(CURRENT_EVENT_ID);
         const API_BASE = "http://localhost:8080";
         const WS_BASE = API_BASE;
+        /** Opciones SockJS (transports explícitos; combinar con setSessionCookieNeeded(false) en el backend). */
+        const SOCKJS_OPTIONS = { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] };
+
+        if (location.protocol === 'file:') {
+            console.warn(
+                '[Celticket] Estás en file://. Usa un servidor HTTP local (Live Server, npx serve, etc.) ' +
+                'para que el WebSocket y CORS funcionen; file:// usa origen opaco y suele fallar.'
+            );
+        }
         
         // --- SESIÓN DEL USUARIO ---
         let MY_USER_ID = localStorage.getItem("celticket_session_id");
@@ -1000,7 +1009,7 @@
             if (ws && ws.connected) return;
             log(`[SISTEMA] Conectando a WS...`, 'log-sys');
             
-            let socket = new SockJS(`${WS_BASE}/seats-ws`);
+            let socket = new SockJS(`${WS_BASE}/seats-ws`, null, SOCKJS_OPTIONS);
             ws = Stomp.over(socket);
             ws.debug = null; // Ocultar pings en consola
 
@@ -1048,7 +1057,7 @@
             const botId = "user_BOT_99";
             log(`[SISTEMA] Conectando Bot (ID: ${botId}) a WS...`, 'log-sys');
 
-            let socket = new SockJS(`${WS_BASE}/seats-ws`);
+            let socket = new SockJS(`${WS_BASE}/seats-ws`, null, SOCKJS_OPTIONS);
             botWs = Stomp.over(socket);
             botWs.debug = null;
 

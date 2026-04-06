@@ -1237,6 +1237,21 @@
         });
         window.addEventListener("resize", renderStage);
 
+        window.addEventListener("message", (event) => {
+            const data = event.data;
+            if (!data || typeof data !== "object") return;
+            if (data.type === "celticket-load-layout" && typeof data.payload === "string") {
+                document.getElementById("jsonOutput").value = data.payload;
+                importJson();
+            }
+            if (data.type === "celticket-request-layout") {
+                const payload = JSON.stringify(getLayoutConfig());
+                if (event.source && typeof event.source.postMessage === "function") {
+                    event.source.postMessage({ type: "celticket-layout-snapshot", payload }, event.origin);
+                }
+            }
+        });
+
         refreshJsonOutput();
         renderStage();
         updateHistoryButtons();

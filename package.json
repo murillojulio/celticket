@@ -1,0 +1,8 @@
+{
+  "name": "celticket",
+  "private": true,
+  "scripts": {
+    "build": "cd admin && npm install && npm run build",
+    "dev:admin": "cd admin && npm run dev"
+  }
+}

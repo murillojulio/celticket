@@ -3,6 +3,7 @@ package com.celticket.backend.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,12 +25,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/seats-ws/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/guest-session").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/admin-login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/payments/wompi/webhook").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/checkout").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/payments/wompi/quote").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/payments/wompi/checkout-session").authenticated()
